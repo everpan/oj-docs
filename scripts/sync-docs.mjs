@@ -1,11 +1,16 @@
 #!/usr/bin/env node
-// 把仓库里的权威文档同步进 VitePress 站点（vitepress/src）。
+// 把两个源仓库的权威文档同步进 VitePress 站点（src/）：
+// 后端 only-js（docs/、sample/）与前端框架 oj-module（docs/prd/）。
 //
 // 设计要点：
 // - 白名单显式登记（ENTRIES），绝不递归目录 —— sample/unit/node_modules 下有大量第三方 README。
 // - 超长文档（> SPLIT_LINES 行）按二级标题切分成目录 + 子页，sidebar 数据一并生成。
-// - 内部相对链接按「源相对路径 → 仓库绝对路径 → 站点路由」两级映射，统一改成站点绝对路径。
-// - 生成物头部写明来源；禁止手改 src/ 下的生成页，要改就改源文件再跑 `npm run sync`。
+// - 切页判定两阶段：先预读全部条目、按同一份正文数行数、建好路由表（切页文档路由是目录，
+//   带尾斜杠），再进入生成 —— 保证链接改写与实际切页一致，避免目录页缺尾斜杠在构建期报死链。
+// - 内部相对链接（含 ./xxx.md）按「源相对路径 → 仓库绝对路径 → 站点路由」两级映射，
+//   统一改成站点绝对路径；前端文档的 [[slug]] / [[slug|文本]] wikilink 按文件名映射转站内链接，
+//   解不出的退化成纯文本。
+// - 生成物头部写明来源（含仓库前缀）；禁止手改 src/ 下的生成页，要改就改源文件再跑 `npm run sync`。
 //
 // 用法：npm run sync
 
@@ -25,8 +30,11 @@ const SRC = path.join(SITE, 'src');
 const SPLIT_LINES = 600;
 
 /**
- * 收录清单：src 为仓库相对路径，route 为站点路由（split 时该路由是目录）。
- * group 仅用于生成 sidebar 时的分组提示。
+ * 收录清单。字段：
+ * - src：源仓库相对路径（配合 from 解析到 only-js / oj-module）
+ * - route：站点路由（切页时该路由是目录）
+ * - from：'backend'（默认，only-js）| 'frontend'（oj-module）
+ * - split：true 强制切页；不写则正文超过 SPLIT_LINES 行时自动切
  */
 const ENTRIES = [
   // ---- 参考（docs/ 顶层，描述当前实现）----
@@ -67,9 +75,11 @@ const ENTRIES = [
   { src: 'docs/prd/framework-verification-playbook.md', route: '/frontend/verification-playbook', title: '端到端验证手册', from: 'frontend' },
   { src: 'docs/prd/oj-release-binary-defect-report.md', route: '/frontend/release-defect-report', title: '发布二进制缺陷报告', from: 'frontend' },
   // 业务模块作者手册：被 framework-dev-guide 引用，现行有效，故从 archive 收录。
-  { src: 'docs/archive/prd/module-development-guide.md', route: '/frontend/module-dev-guide', title: '业务模块开发手册', from: 'frontend' },
+  // split: true —— 长文档，且 config 的 splitNav 依赖其切页结构，显式声明不靠行数阈值。
+  { src: 'docs/archive/prd/module-development-guide.md', route: '/frontend/module-dev-guide', title: '业务模块开发手册', from: 'frontend', split: true },
   // 设计决策（已确认的设计稿，按日期命名，独立成组）
-  { src: 'docs/prd/202609110947-oj-module-two-package-consolidation-design.md', route: '/frontend/design/two-package-consolidation', title: '双包整合与改名', from: 'frontend' },
+  // 同上：config 的 splitNav 引用其切页结构，显式 split。
+  { src: 'docs/prd/202609110947-oj-module-two-package-consolidation-design.md', route: '/frontend/design/two-package-consolidation', title: '双包整合与改名', from: 'frontend', split: true },
   { src: 'docs/prd/202609111926-vendor-npm-install-design.md', route: '/frontend/design/vendor-npm-install', title: 'vendor npm 改造', from: 'frontend' },
   { src: 'docs/prd/202609112006-init-template-personal-center-design.md', route: '/frontend/design/init-template', title: 'init 模板补全', from: 'frontend' },
   { src: 'docs/prd/202609112324-web-layout-and-codegen-guide-design.md', route: '/frontend/design/web-layout-codegen', title: 'web 布局改名', from: 'frontend' },
@@ -110,37 +120,6 @@ const EXCLUDED = new Set([
   'docs/plugin-architecture.md',
   'docs/cli2.md',
 ]);
-
-// ---------------------------------------------------------------- 路由表
-
-/**
- * 判断条目是否会被切页：显式 `split: true`，或正文超过 SPLIT_LINES 行。
- * 必须在这里就确定，因为路由表（ROUTES / WIKIS）要根据「是否切页」决定路由带不带尾斜杠，
- * 否则链接会指向错误路径（切页文档的路由是目录，必须带 `/`），构建期死链检查会报死链。
- */
-function willSplit(e) {
-  if (e.split === true) return true;
-  const abs = path.join(SRCROOTS[e.from ?? 'backend'], e.src);
-  if (!fs.existsSync(abs)) return false;
-  return fs.readFileSync(abs, 'utf8').split('\n').length > SPLIT_LINES;
-}
-
-/** 仓库相对路径 → 站点路由（切分文档指向目录，带尾斜杠）。 */
-const ROUTES = new Map();
-for (const e of ENTRIES) {
-  const split = willSplit(e);
-  ROUTES.set(e.src, split ? `${e.route}/` : e.route);
-}
-
-/**
- * wikilink 文件名 stem → 站点路由。前端文档大量使用 `[[slug]]` / `[[slug|文本]]`，
- * 这里按「文件名去扩展名」建立 slug 映射，能解析的就转成站内链接。
- */
-const WIKIS = new Map();
-for (const e of ENTRIES) {
-  const stem = e.src.replace(/\.md$/i, '').split('/').pop();
-  if (stem) WIKIS.set(stem, willSplit(e) ? `${e.route}/` : e.route);
-}
 
 // ---------------------------------------------------------------- 工具
 
@@ -231,7 +210,7 @@ function rewriteLinks(text, srcFile, report) {
 
 /**
  * 把 `[[slug]]` / `[[slug|文本]]` 形式的 wikilink 转成站内链接（基于 WIKIS 映射）。
- * 代码块内不处理；解不出的 slug 原样保留（避免把读者引到不存在的页面）。
+ * 代码块内不处理；解不出的退化成纯文本（slug 或 `|` 后的别名），避免页面出现裸括号或死链。
  */
 function rewriteWiki(text) {
   let fence = false;
@@ -290,6 +269,49 @@ const banner = (src, repo) =>
   `<!-- 由 scripts/sync-docs.mjs 于 ${TODAY} 从 \`${repo}:${src}\` 生成，请勿直接编辑；` +
   `改源文件后运行 \`npm run sync\` -->\n`;
 
+// ---------------------------------------------------------------- 预读与路由表（两阶段）
+
+/**
+ * 第一阶段：读入全部条目，产出每个条目「是否切页」的权威决策。
+ * 路由表（ROUTES / WIKIS）要在改写任何链接之前建好，而切页与否决定路由带不带尾斜杠。
+ * 这里的行数必须与主流程用同一份正文来数（去 frontmatter + 代码块语言归一 + 裸标签转义；
+ * wikilink 改写不改变行数，放到第二阶段做），否则路由表与实际切页不一致 → 构建期死链。
+ * 注意：这段必须放在工具函数的 const（如 HTML_OK）初始化之后 —— 函数声明会提升，const 不会。
+ */
+const PROCESSED = new Map(); // src → { fm, prepped, doSplit }
+for (const e of ENTRIES) {
+  const abs = path.join(SRCROOTS[e.from ?? 'backend'], e.src);
+  if (!fs.existsSync(abs)) {
+    console.warn(`[sync] 缺失：${e.src}`);
+    continue;
+  }
+  const [fm, bodyRaw] = splitFrontmatter(fs.readFileSync(abs, 'utf8'));
+  const prepped = escapeBareTags(normalizeCodeFences(bodyRaw));
+  PROCESSED.set(e.src, {
+    fm,
+    prepped,
+    doSplit: e.split === true || prepped.split('\n').length > SPLIT_LINES,
+  });
+}
+
+/** 仓库相对路径 → 站点路由（切分文档指向目录，带尾斜杠）。 */
+const ROUTES = new Map();
+
+/**
+ * wikilink 文件名 stem → 站点路由。前端文档大量使用 `[[slug]]` / `[[slug|文本]]`，
+ * 这里按「文件名去扩展名」建立 slug 映射，能解析的就转成站内链接。
+ */
+const WIKIS = new Map();
+
+for (const e of ENTRIES) {
+  const p = PROCESSED.get(e.src);
+  if (!p) continue; // 预读阶段已告警缺失
+  const route = p.doSplit ? `${e.route}/` : e.route;
+  ROUTES.set(e.src, route);
+  const stem = e.src.replace(/\.md$/i, '').split('/').pop();
+  if (stem) WIKIS.set(stem, route);
+}
+
 // ---------------------------------------------------------------- 主流程
 
 const unresolved = [];
@@ -297,18 +319,13 @@ const unresolved = [];
 const splitNav = {};
 
 for (const e of ENTRIES) {
+  const p = PROCESSED.get(e.src);
+  if (!p) continue; // 预读阶段已告警缺失
   const repo = e.from === 'frontend' ? 'oj-module' : 'only-js';
-  const abs = path.join(SRCROOTS[e.from ?? 'backend'], e.src);
-  if (!fs.existsSync(abs)) {
-    console.warn(`[sync] 缺失：${e.src}`);
-    continue;
-  }
-  const raw = fs.readFileSync(abs, 'utf8');
-  const [existingFm, bodyRaw] = splitFrontmatter(raw);
-  const body = rewriteWiki(escapeBareTags(normalizeCodeFences(bodyRaw)));
-
-  const lineCount = body.split('\n').length;
-  const doSplit = e.split === true || lineCount > SPLIT_LINES;
+  const existingFm = p.fm;
+  // 第二阶段：WIKIS 此时已建好，才做 wikilink 改写（不改变行数，切页决策已在预读阶段定下）。
+  const body = rewriteWiki(p.prepped);
+  const doSplit = p.doSplit;
 
   if (!doSplit) {
     const text = rewriteLinks(body, e.src, unresolved);

@@ -3,6 +3,9 @@
 把 **后端仓库 `only-js`**（`docs/`、`sample/`）与 **前端仓库 `oj-module`**（`docs/prd/`）里的文档
 编成面向新人的开发者手册。后端（Rust + JS/TS 运行时）与前端（React + TS 框架）分两大区呈现。
 
+> 构建流程、同步机制与注意事项见维护者文档 [`docs/README.md`](docs/README.md)——
+> 改动脚本、配置或流程后请同步更新它，保持一致性。
+
 包管理器：**pnpm**（`package.json` 已声明 `packageManager`，别用 npm 混装）。
 
 ```bash

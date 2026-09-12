@@ -101,6 +101,12 @@ export default withMermaid(defineConfig({
             collapsed: true,
             items: splitNav['/reference/user-manual'],
           },
+          {
+            text: 'db 新人手册',
+            link: '/reference/db-guide/',
+            collapsed: true,
+            items: splitNav['/reference/db-guide'],
+          },
           { text: '运维手册', link: '/reference/ops-manual' },
           { text: 'oj 开发 skill', link: '/reference/devkit-skill' },
         ],

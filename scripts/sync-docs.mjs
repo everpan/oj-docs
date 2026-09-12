@@ -26,6 +26,20 @@ const SRCROOT_FRONTEND = path.resolve(SITE, '..', 'oj-module');
 const SRCROOTS = { backend: SRCROOT_BACKEND, frontend: SRCROOT_FRONTEND };
 const SRC = path.join(SITE, 'src');
 
+// 站点自包含：生成产物已入库，build/dev 不得依赖外部源仓库。
+// 任一源仓库缺席时跳过整个同步（沿用已提交的产物）——若继续空跑，会写出空的
+// sidebar 数据并覆盖已提交版本，直接弄坏站点。守卫必须放在任何写入之前。
+{
+  const missing = Object.entries(SRCROOTS).filter(([, root]) => !fs.existsSync(root));
+  if (missing.length) {
+    console.warn(
+      `[sync] 源仓库缺失，跳过同步（沿用已提交的生成产物）：\n` +
+        missing.map(([name, root]) => `  - ${name}: ${root}`).join('\n')
+    );
+    process.exit(0);
+  }
+}
+
 /** 超过这个行数就按 `## ` 切页。 */
 const SPLIT_LINES = 600;
 
@@ -40,6 +54,7 @@ const ENTRIES = [
   // ---- 参考（docs/ 顶层，描述当前实现）----
   { src: 'docs/dev-guide.md', route: '/reference/dev-guide', title: '开发指南', split: true },
   { src: 'docs/user-manual.md', route: '/reference/user-manual', title: '用户手册', split: true },
+  { src: 'docs/db-guide.md', route: '/reference/db-guide', title: 'db 新人手册', split: true },
   { src: 'docs/ops-manual.md', route: '/reference/ops-manual', title: '运维手册' },
   { src: 'docs/testing.md', route: '/reference/testing', title: '测试手册' },
   { src: 'docs/migration.md', route: '/reference/migration', title: '数据迁移' },

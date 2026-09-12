@@ -24,10 +24,11 @@ VitePress 的页面必须落在 `srcDir`（这里是 `src/`）里。让站点直
 2. **生成页不可手改**：每页顶部有
    `<p class="gen-note">generated: <日期> · 本页由脚本从 <仓库>:<源> 同步生成…</p>`，
    改源文件后重跑 `pnpm run sync` 即可。
-3. **产物不入库**：`.gitignore` 排除了 `src/reference/`、`src/modules/`、`src/frontend/`、
-   `src/sample/`、`.vitepress/generated/`；`package.json` 用 `predev` / `prebuild` 钩子保证
-   dev/build 前一定先同步，克隆即可用。（代价：改了源文档却忘了跑 sync，本地看不到差异 ——
-   所以提交源文档前跑一次 `pnpm run verify`。）
+3. **产物入库、站点自包含**：生成页与 sidebar 数据提交进仓库，克隆即可 build，
+   **不依赖源仓库**——sync 在 `../only-js` / `../oj-module` 缺席时自动跳过（沿用已提交
+   的产物；守卫必须先于任何写入，否则空跑会写出空 sidebar 数据弄坏站点）。压漂移靠
+   流程：改源文档后跑 `pnpm run sync`，提交前跑 `pnpm run verify`，把再生成页面随
+   源变更一起提交（注意生成页带日期，sync 后 git diff 会显示日期变化，属正常）。
 
 ### 双数据源
 

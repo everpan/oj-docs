@@ -27,9 +27,10 @@ pnpm run verify      # sync + check + build 一条龙（CI 用）
 | `src/reference/`、`src/modules/`、`src/sample/` | 后端（only-js）由脚本同步生成 | ❌ 改源文档后 `pnpm run sync` |
 | `src/frontend/` | 前端框架（oj-module）由脚本同步生成 | ❌ 改源文档后 `pnpm run sync` |
 
-> 生成产物**不入库**（`.gitignore` 已排除 `src/reference/`、`src/modules/`、`src/sample/`、
-> `.vitepress/generated/`）。克隆后 `pnpm run dev` / `pnpm run build` 会经 `predev` / `prebuild`
-> 自动先同步一次，不需要手工补。
+> 生成产物**入库**（`src/reference/`、`src/modules/`、`src/frontend/`、`src/sample/`、
+> `.vitepress/generated/`）—— 站点自包含，克隆即可 `pnpm install && pnpm run build`，
+> **不依赖外部源仓库**。本机存在 `../only-js` / `../oj-module` 时，`predev` / `prebuild`
+> 会先自动同步（源仓库缺席时 sync 自动跳过，沿用已提交的产物）。
 
 **生成页顶部都标了来源与生成日期**（含 `only-js:` / `oj-module:` 仓库前缀），看到
 「本页由脚本从 `xxx.md` 同步生成」就别手改。

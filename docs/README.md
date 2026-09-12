@@ -13,7 +13,8 @@
 | backend（默认） | `../only-js` | `docs/`、`docs/devkit/`、`docs/modules/`、`sample/` |
 | frontend | `../oj-module` | `docs/prd/`（现行手册与设计稿；个别现行文档取自 `docs/archive/prd/`） |
 
-- 两个源仓库必须存在于同级目录，缺失时 sync 会逐条报 `[sync] 缺失：<src>`。
+- 两个源仓库通常与本仓库同级；**任一源仓库缺席时 sync 自动跳过**（打印提示后退出，
+  沿用已提交的生成产物）——因此 build/dev 不依赖外部仓库，克隆 oj-docs 单仓库即可构建。
 - 两个仓库的 `docs/archive/`、`docs/superpowers/` 都是历史文档，指向它们的链接统一
   改写到 `/appendix/history-index`（被收录的除外——路由表优先命中）。
 
@@ -25,8 +26,8 @@
 | `.vitepress/config.mts`、`.vitepress/theme/` | 站点配置与主题 | ✅ | ✅ |
 | `scripts/` | 同步与死链检查脚本 | ✅ | ✅ |
 | `docs/`（本目录） | 维护者文档 | ✅ | ✅ |
-| `src/reference/`、`src/modules/`、`src/frontend/`、`src/sample/` | **脚本生成页** | ❌ 改源文件后 sync | ❌ |
-| `.vitepress/generated/` | 脚本生成的 sidebar 数据 | ❌ | ❌ |
+| `src/reference/`、`src/modules/`、`src/frontend/`、`src/sample/` | **脚本生成页** | ❌ 改源文件后 sync | ✅（生成即入库） |
+| `.vitepress/generated/` | 脚本生成的 sidebar 数据 | ❌ | ✅（生成即入库） |
 | `.vitepress/cache/`、`.vitepress/dist/`、`node_modules/` | 缓存/产物 | — | ❌ |
 
 生成页顶部都有 banner 与 `gen-note`（含 `only-js:` / `oj-module:` 仓库前缀与生成日期），
@@ -45,8 +46,10 @@ pnpm run build       # 构建到 .vitepress/dist（prebuild 钩子会先自动 s
 pnpm run verify      # sync → check → build 一条龙；提交前必跑
 ```
 
-克隆后无需手工补生成页：`predev` / `prebuild` 保证 dev/build 前一定先同步。
-代价是「改了源仓库文档但没跑 sync」时本地看不到差异——**提交前跑 `pnpm run verify`**。
+克隆后即可构建：`pnpm install && pnpm run build`，**不依赖外部源仓库**——生成产物已入库；
+本机存在源仓库时 `predev` / `prebuild` 会先自动 sync（缺席时 sync 自动跳过）。
+源仓库文档更新后跑 `pnpm run sync` 再生成，**提交前跑 `pnpm run verify`**，
+把再生成页面随源变更一起提交。
 
 ## 4. 同步机制（scripts/sync-docs.mjs）
 
@@ -126,6 +129,10 @@ pnpm run verify      # sync → check → build 一条龙；提交前必跑
    `ignoreDeadLinks` 已放行，不算死链。
 8. **sync 与源仓库是单向复制**：要改文档内容去源仓库改；在 oj-docs 里改生成页
    会被下次 sync 覆盖。
+9. **站点自包含（build 不依赖外部）**：生成产物入库；sync 开头的守卫在任一源仓库
+   缺失时直接跳过（守卫必须先于任何写入，否则空跑会写出空 sidebar 数据弄坏站点）。
+   注意生成页 frontmatter 与 banner 带 `generated` 日期，sync 后即使内容没变
+   git diff 也会显示日期刷新，属正常现象；只在实际更新文档时提交再生成结果。
 
 ## 7. 常见操作手册
 
@@ -146,11 +153,12 @@ pnpm run verify      # sync → check → build 一条龙；提交前必跑
 
 ```bash
 pnpm run verify      # 重新同步 + 检查 + 构建
-git status           # 生成物不入库，通常没有 diff；有 diff 说明脚本/配置变了
+git status           # 生成页已入库：diff 即再生成结果（含日期刷新），确认后一并提交
 ```
 
 ### 提交约定
 
-- 生成产物（`src/reference/` 等）**不入库**，提交里只应有脚本、配置、原创页与维护者文档；
+- 生成产物**入库**：源仓库文档更新后 `pnpm run sync`，把再生成页面（含日期刷新）
+  随脚本/配置变更一起提交；
 - 提交前跑 `pnpm run verify`；
 - 改动构建流程、脚本行为或踩了新坑，**同步更新本文档**。

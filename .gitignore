@@ -2,10 +2,8 @@ node_modules/
 .vitepress/cache/
 .vitepress/dist/
 
-# sync-docs.mjs 的生成产物（源文件是 only-js 的 docs/、sample/ 与 oj-module 的 docs/prd/，不入库）：
-# 克隆后先 npm install，dev/build 会由 predev/prebuild 自动跑一次同步。
-src/reference/
-src/modules/
-src/frontend/
-src/sample/
-.vitepress/generated/
+# src/reference/、src/modules/、src/frontend/、src/sample/、.vitepress/generated/
+# 是 scripts/sync-docs.mjs 的生成产物，【已入库】—— 站点自包含，克隆即可
+# pnpm install && pnpm run build，不依赖 ../only-js 与 ../oj-module
+# （源仓库缺席时 sync 自动跳过，沿用已提交的产物）。
+# 更新流程：改源仓库文档 → pnpm run sync → pnpm run verify → 连同再生成页面一起提交。

@@ -1,0 +1,11 @@
+node_modules/
+.vitepress/cache/
+.vitepress/dist/
+
+# sync-docs.mjs 的生成产物（源文件是 only-js 的 docs/、sample/ 与 oj-module 的 docs/prd/，不入库）：
+# 克隆后先 npm install，dev/build 会由 predev/prebuild 自动跑一次同步。
+src/reference/
+src/modules/
+src/frontend/
+src/sample/
+.vitepress/generated/

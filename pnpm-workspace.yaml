@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+
+overrides:
+  "d3-contour>d3-array": 3.2.4

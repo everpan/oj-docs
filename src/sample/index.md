@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:sample/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:sample/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: sample 项目
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:sample/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:sample/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj sample — user/order/file
@@ -62,5 +62,5 @@ generated: 2026-09-12
 - 302 一律 `-i` 手动接力 Location；state/code 一次一用（重放 401），跳转腿免租户头靠
   `tenant.anonymous_paths`（`/oidc/*`、`/idp/*`），对接外部 IdP 只改 config `oidc.rp`
 - 已知限制：OP `sub` = users.id 字符串 → 自托管 OIDC 登录 JIT 新建本地账号
-  （username = `oidc:&lt;tenant>:&lt;sub>`，占位 hash 不可密码登录，与本地口令账号天然隔离），
+  （username = `oidc:<tenant>:<sub>`，占位 hash 不可密码登录，与本地口令账号天然隔离），
   不合并原 demo 行

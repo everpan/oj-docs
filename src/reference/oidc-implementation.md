@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/oidc-implementation.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/oidc-implementation.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: OIDC 实现
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/oidc-implementation.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/oidc-implementation.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # OIDC 实现文档（OP + RP 双角色）
@@ -154,7 +154,7 @@ flowchart LR
 
 - **RP 侧**：tenant 决定用哪个 IdP。tenant 从 query 进入豁免路由，建 state 时快照进 KV，
   后续只信快照——query 无法劫持已建立的登录流。
-- **OP 侧**：tenant 来自 client 注册（`oidc.clients.&lt;id>.tenant`），随 code 进入
+- **OP 侧**：tenant 来自 client 注册（`oidc.clients.<id>.tenant`），随 code 进入
   id_token/access_token claims。
 - **豁免边界**：只有跳转腿豁免；登录后的业务请求照常强制 `X-TENANT-ID`，与全站语义一致。
 
@@ -177,7 +177,7 @@ flowchart LR
 
 ## 5. 已知边界（刻意不做的）
 
-- OP sub = `users.id` 字符串；自举登录 JIT 出 `oidc:default:&lt;id>` 本地行，与原 demo 行
+- OP sub = `users.id` 字符串；自举登录 JIT 出 `oidc:default:<id>` 本地行，与原 demo 行
   **不合并**（外部 IdP 语义下 sub 本就 opaque）。
 - 不支持：consent 页（登录即同意）、refresh_token / client_credentials grant、
   OP end_session、JWKS 轮换运维（kid 机制已就位，轮换是配置问题）。

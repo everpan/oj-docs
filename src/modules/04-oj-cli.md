@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/04-oj-cli.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/04-oj-cli.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 04 · CLI 与装配
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/04-oj-cli.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/04-oj-cli.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 04 · CLI 与装配（`oj/`）
@@ -34,7 +34,7 @@ generated: 2026-09-12
 1. redis 非 default 的键 warn 忽略；
 2. **证书必配门禁**（缺任一路径 → Err，无逃生口）；
 3. `dir` 绝对化 + `LoaderShared { project_root: config_dir, ts }`；
-4. `ext_boot_spec(config_dir)` 探测 `ext_boot.js`，冻结 `?v=&lt;mtime>`（改动须重启进程）；
+4. `ext_boot_spec(config_dir)` 探测 `ext_boot.js`，冻结 `?v=<mtime>`（改动须重启进程）；
 5. `assemble_plugins` → `PluginInfo[]`（同时喂 `StableState.plugins` 与 `GET {base}/plugins`）；
 6. KV：声明 `redis.default` → 经 kv 插件 vtable connect；未声明 → `InMemoryKV`；
 7. ES / blob：`es` 取插件单后端；`blob` 逐后端装配，下载路由只服务 default；
@@ -92,7 +92,7 @@ generated: 2026-09-12
 - `is_release(dir)`（:105）：目录含 `manifests.yaml` → release。
 - `assemble_blobs`（:144）：逐后端构造；`driver != local` 且无 blob 插件 → fail fast。
 - `connect_dbs`（:188）：经注册表按 scheme 认领，错误带库名。
-- `plugin_cfg`（:232）：cfg 三级回落 —— `plugins.&lt;name>` 非空对象 → 轴适配器 → `{}`。
+- `plugin_cfg`（:232）：cfg 三级回落 —— `plugins.<name>` 非空对象 → 轴适配器 → `{}`。
 - `build_registries`（:264）：插件后端先于内置；es 键选单后端、db 认领式、blob 键选单槽、
   bus 键选注册表、kv 键选单槽；冲突/缺失必需插件 → fail fast。
 - `assemble_plugins`（:340）：解析 plugins_dir → 严格清单/缺省扫描 → 逐个加载校验。
@@ -101,20 +101,26 @@ generated: 2026-09-12
 
 - 版本视图 = `dist/manifests.yaml` 锁 ∪ 本次计划构建的模块版本；
   **版本目录不单射 → fail-fast**（`{m}-{v}` 碰撞）。
-- `checks::run`（S002–S007）**构建即检查**；`--check` 只校验不落盘（CI 门禁）。
+- `checks::run`（S002–S008）**构建即检查**；`--check` 只校验不落盘（CI 门禁）。
 - 单模块：清场同名版本目录 → 转译落盘 → 内省产 `routes.js` → lock upsert → `.tgz`。
-- 转译处理三件事：
+- 转译处理四件事：
   - `strip_route_decls`：剥掉产物里的 `fn.route = "...";` 整行；
-  - `fix_relative_imports`：模块内相对路径重算、跨模块指向 `dist/&lt;m_t>-&lt;v_t>/`；
+  - `fix_import_specifiers`：**全部本地 specifier**（相对 + `#` 别名）经**与运行期同一份探针**
+    归一后重写——模块内重算相对路径、跨模块指向 `dist/<m_t>-<v_t>/`；别名 `#x`/`#/m/x`
+    在此**实化**（产物内不再有 `#`）；目标必须已落盘（非 `.ts` 目标即报错）；
   - 默认 minify（`--no-minify` 得多行可读产物，排障逃生门）。
-- `guard_no_api_imports`：`api.ts` 只许作路由入口，被 import 即拒绝。
+- 两道 fail-fast 兜底（扫描器天花板的收敛点）：
+  - `assert_no_aliases`：单文件内不得残留 `#` specifier；
+  - `assert_dist_consistent`：构建末尾扫**本次产出的目录**，任何本地 specifier 都必须落到
+    已落盘文件（「dev 能跑、release 悬空」→ 构建期显式失败）。
+- `guard_no_api_imports`：`api.ts` 只许作路由入口，被 import 即拒绝（含别名写法 `#item/api`）。
 - `rel_pattern`：相对 pattern 含模块名段；根级声明（`/` 开头）剥首斜杠不加模块段。
 
 ## 5. `test_cmd.rs` + `test_ext.rs`（进程内测试运行器）
 
 - 钉线程模型：专用 OS 线程 + `current_thread().enable_all()`（`JsRuntime` 是 `!Send`）。
 - extensions = [`bridge_ext`（真实全局 + `StableState`）, `oj_test_ext`（`client` + 迷你框架）]；
-  `OpState` 注入 `Arc&lt;dyn ClientTransport>`。
+  `OpState` 注入 `Arc<dyn ClientTransport>`。
 - 收集 `*.test.ts`（按名排序）→ 逐个以 side module 加载（注册用例）→ `__runTests()`
   → 读 `globalThis.__testSummaryJson` → 反序列化 → 报告 → 退出码（不在运行时内 exit）。
 - `op_client_dispatch`（`test_ext.rs:53`）：先 clone `Arc` 再 drop 借位（**禁止持 Ref 跨 await**），

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/migration.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/migration.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 数据迁移
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/migration.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/migration.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 数据初始化与迁移手册（Data Init & Migration Runbook）
@@ -46,7 +46,7 @@ generated: 2026-09-12
 
 ### 2.1 seed.sql —— 引导数据，随启动重放
 
-- **位置**：`src/&lt;module>/seed.sql`（模块自治，无根级 seed）。
+- **位置**：`src/<module>/seed.sql`（模块自治，无根级 seed）。
 - **时机与顺序**：迁移门禁（auto apply / verify）**之后**，按模块目录名排序逐模块
   重放；三方言 default 库都执行（无 default 库 → `warn: seed skipped` 跳过）。
 - **适用**：每次启动都必须存在的引导数据（内置角色、菜单树、字典表）。
@@ -100,7 +100,7 @@ generated: 2026-09-12
 - **M001 篡改**：已应用迁移的文件内容被改（checksum 对不上）→ 拒绝。修历史错误的
   正确姿势是**追加新迁移**（新 seq 前向修正），不是改旧文件。
 - **M002 缺文件**：账本里有、产物里没有 → 拒绝（产物不完整 / 回滚了 migrations 目录）。
-- 旧版每模块一张 `_oj_migrations_&lt;module>` 的库需一次性收敛（否则重迁移撞
+- 旧版每模块一张 `_oj_migrations_<module>` 的库需一次性收敛（否则重迁移撞
   "table exists"）：
 
   ```sql
@@ -182,7 +182,7 @@ generated: 2026-09-12
 | M001 | 已应用迁移被篡改（checksum 不符） | apply | 追加新迁移前向修正，勿改旧文件 |
 | M002 | 账本有、产物缺迁移文件 | apply | 补齐产物（先 `oj build`） |
 | M003 | 账本 seq 超过产物最大 seq（降版部署） | release 启动 verify | 部署含最新迁移的产物；人工回退账本自担风险 |
-| M004 | 有待应用迁移（含首启空账本） | release 启动 verify | 先 `oj migrate -c &lt;config> -d &lt;dir>` 再启动；`off` 是逃生门 |
+| M004 | 有待应用迁移（含首启空账本） | release 启动 verify | 先 `oj migrate -c <config> -d <dir>` 再启动；`off` 是逃生门 |
 
 ## 6. 限制与红线汇总
 

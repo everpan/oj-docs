@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 把两个源仓库的权威文档同步进 VitePress 站点（src/）：
-// 后端 only-js（docs/、sample/）与前端框架 oj-module（docs/prd/）。
+// 后端 oj-bin（docs/、sample/）与前端框架 oj-module（docs/prd/）。
 //
 // 设计要点：
 // - 白名单显式登记（ENTRIES），绝不递归目录 —— sample/unit/node_modules 下有大量第三方 README。
@@ -20,8 +20,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SITE = path.resolve(HERE, '..'); // 本站点根（oj-docs / vitepress）
-// 双源：后端（only-js）与前端框架（oj-module）。ENTRIES 用 `from` 指定取哪个源。
-const SRCROOT_BACKEND = path.resolve(SITE, '..', 'only-js');
+// 双源：后端（oj-bin）与前端框架（oj-module）。ENTRIES 用 `from` 指定取哪个源。
+const SRCROOT_BACKEND = path.resolve(SITE, '..', 'oj-bin');
 const SRCROOT_FRONTEND = path.resolve(SITE, '..', 'oj-module');
 const SRCROOTS = { backend: SRCROOT_BACKEND, frontend: SRCROOT_FRONTEND };
 const SRC = path.join(SITE, 'src');
@@ -45,9 +45,9 @@ const SPLIT_LINES = 600;
 
 /**
  * 收录清单。字段：
- * - src：源仓库相对路径（配合 from 解析到 only-js / oj-module）
+ * - src：源仓库相对路径（配合 from 解析到 oj-bin / oj-module）
  * - route：站点路由（切页时该路由是目录）
- * - from：'backend'（默认，only-js）| 'frontend'（oj-module）
+ * - from：'backend'（默认，oj-bin）| 'frontend'（oj-module）
  * - split：true 强制切页；不写则正文超过 SPLIT_LINES 行时自动切
  */
 const ENTRIES = [
@@ -55,12 +55,19 @@ const ENTRIES = [
   { src: 'docs/dev-guide.md', route: '/reference/dev-guide', title: '开发指南', split: true },
   { src: 'docs/user-manual.md', route: '/reference/user-manual', title: '用户手册', split: true },
   { src: 'docs/db-guide.md', route: '/reference/db-guide', title: 'db 新人手册', split: true },
+  { src: 'docs/tenant-guide.md', route: '/reference/tenant-guide', title: '多租户新手指南' },
   { src: 'docs/ops-manual.md', route: '/reference/ops-manual', title: '运维手册' },
   { src: 'docs/testing.md', route: '/reference/testing', title: '测试手册' },
   { src: 'docs/migration.md', route: '/reference/migration', title: '数据迁移' },
   { src: 'docs/bridge.md', route: '/reference/bridge', title: 'bridge 与全局对象' },
   { src: 'docs/websocket.md', route: '/reference/websocket', title: 'WebSocket' },
   { src: 'docs/mq-tasks.md', route: '/reference/mq-tasks', title: 'MQ 与长任务' },
+  { src: 'docs/mail-smtp.md', route: '/reference/mail-smtp', title: '邮件投递（SMTP）' },
+
+  // ---- 设计与实施记录（docs/plans/，已落地特性的过程记录，随专题专栏提供）----
+  // impl 是长文档且被 config 的 splitNav 引用，显式 split。
+  { src: 'docs/plans/2026-09-15-mail-smtp-design.md', route: '/reference/mail-smtp-design', title: '邮件投递 · 设计记录' },
+  { src: 'docs/plans/2026-09-15-mail-smtp-impl.md', route: '/reference/mail-smtp-impl', title: '邮件投递 · 实施记录', split: true },
   { src: 'docs/oidc-integration.md', route: '/reference/oidc-integration', title: 'OIDC 接入' },
   { src: 'docs/oidc-implementation.md', route: '/reference/oidc-implementation', title: 'OIDC 实现' },
   { src: 'docs/plugin-development.md', route: '/reference/plugin-development', title: '插件开发' },
@@ -181,8 +188,15 @@ function normalizeCodeFences(text) {
 
 /**
  * VitePress 把 md 当 Vue 模板编译，正文里的 `<Uint8Array>`、`<config_dir>` 这类
- * 「看起来像标签」的占位符会被当成未闭合元素，直接让 build 失败。这里在代码块之外
- * 把非白名单标签的 `<` 转义掉（白名单里的真 HTML 标签原样保留）。
+ * 「看起来像标签」的占位符会被当成未闭合元素，直接让 build 失败。这里在正文里把
+ * 非白名单标签的 `<` 转义掉（白名单里的真 HTML 标签原样保留）。
+ *
+ * 代码（围栏块与**行内代码**）一律不碰：markdown-it 会把代码里的 `<` 自己转义成 `&lt;`，
+ * 脚本若提前转义，markdown-it 会再转一次变成 `&amp;lt;`，页面上就显示成 `&lt;`
+ * （早期只跳过围栏块，线上曾有 380 处这种字样）。
+ *
+ * 白名单标签还要满足「正文里确实有 `</tag>`」才算真 HTML：源文档里 `未知轴 '<a>'`
+ * 这种裸占位符命中白名单（`a` 是合法标签），会被当成未闭合的 `<a>` 元素让 build 失败。
  */
 const HTML_OK = new Set([
   '!--', '!doctype', 'br', 'hr', 'img', 'div', 'span', 'p', 'a', 'ul', 'ol', 'li',
@@ -191,19 +205,42 @@ const HTML_OK = new Set([
   'center', 'small', 'kbd', 'sup', 'u', 's', 'template', 'style', 'script',
 ]);
 
+/** 自闭合/声明类标签：本来就没有闭合标签，白名单命中即原样保留。 */
+const HTML_VOID = new Set(['!--', '!doctype', 'br', 'hr', 'img']);
+
+/** 行内代码：`` `x` `` / `` ``x`` ``。与围栏块一样，交给 markdown-it 处理。 */
+const INLINE_CODE = /`+[^`]*`+/g;
+
 function escapeBareTags(text) {
+  const lines = text.split('\n');
+
+  // 第一遍：收集正文里真正闭合的标签名（行内代码里的不算数）。
+  const closed = new Set();
   let fence = false;
-  return text
-    .split('\n')
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      fence = !fence;
+      continue;
+    }
+    if (fence) continue;
+    for (const m of line.replace(INLINE_CODE, '').matchAll(/<\/([A-Za-z][A-Za-z0-9-]*)\s*>/g)) {
+      closed.add(m[1].toLowerCase());
+    }
+  }
+
+  // 第二遍：行内代码整段原样返回，只有正文里的标签参与判定与转义。
+  fence = false;
+  return lines
     .map((line) => {
       if (/^\s*(```|~~~)/.test(line)) {
         fence = !fence;
         return line;
       }
       if (fence) return line;
-      return line.replace(/<([A-Za-z!/][A-Za-z0-9!-]*)/g, (all, name) => {
-        const key = name.slice(1).toLowerCase();
-        return HTML_OK.has(name.toLowerCase()) || HTML_OK.has(key) ? all : `&lt;${name}`;
+      return line.replace(/(`+[^`]*`+)|<([A-Za-z!/][A-Za-z0-9!-]*)/g, (all, code, name) => {
+        if (code !== undefined) return all;
+        const bare = name.toLowerCase().replace(/^\//, ''); // `/summary` → `summary`
+        return HTML_OK.has(bare) && (HTML_VOID.has(bare) || closed.has(bare)) ? all : `&lt;${name}`;
       });
     })
     .join('\n');
@@ -274,7 +311,7 @@ const TODAY = new Date().toISOString().slice(0, 10);
 /**
  * 页面顶部可见的来源说明（含生成日期），小字号呈现 —— 见 .vitepress/theme/style.css
  * 的 `.gen-note`。用 `<p>` 而非 markdown：HTML 块内的 markdown 不会再被解析。
- * repo 标出来源仓库（backend=only-js / frontend=oj-module），便于区分双源。
+ * repo 标出来源仓库（backend=oj-bin / frontend=oj-module），便于区分双源。
  */
 const note = (src, repo) =>
   `<p class="gen-note">generated: ${TODAY} · 本页由脚本从 ${repo}:${src} 同步生成，` +
@@ -336,7 +373,7 @@ const splitNav = {};
 for (const e of ENTRIES) {
   const p = PROCESSED.get(e.src);
   if (!p) continue; // 预读阶段已告警缺失
-  const repo = e.from === 'frontend' ? 'oj-module' : 'only-js';
+  const repo = e.from === 'frontend' ? 'oj-module' : 'oj-bin';
   const existingFm = p.fm;
   // 第二阶段：WIKIS 此时已建好，才做 wikilink 改写（不改变行数，切页决策已在预读阶段定下）。
   const body = rewriteWiki(p.prepped);

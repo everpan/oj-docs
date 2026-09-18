@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `oj-module:docs/prd/oj-release-binary-defect-report.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-module:docs/prd/oj-release-binary-defect-report.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 发布二进制缺陷报告
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 oj-module:docs/prd/oj-release-binary-defect-report.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-module:docs/prd/oj-release-binary-defect-report.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj 发布二进制缺陷报告：release 产物在非构建机不可用

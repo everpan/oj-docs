@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/oidc-integration.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/oidc-integration.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: OIDC 接入
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/oidc-integration.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/oidc-integration.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # OIDC 接入手册
@@ -26,7 +26,7 @@ cargo run -p oj-cert -- gen -o config --days 365
 ```
 
 - RP 角色对接的 IdP 必须支持：**authorization code flow + PKCE S256 + RS256 id_token +
-  discovery**（`&lt;issuer>/.well-known/openid-configuration`）。四者缺一不可（RP 强制 PKCE
+  discovery**（`<issuer>/.well-known/openid-configuration`）。四者缺一不可（RP 强制 PKCE
   S256、强制验签）。
 
 ## 2. 最小可用配置
@@ -48,7 +48,7 @@ oidc:
 
 IdP 侧注册（在 IdP 的管理台上做）：
 
-- redirect_uri 填你服务的**精确串**：`https://&lt;host>/v1/api/oidc/callback`
+- redirect_uri 填你服务的**精确串**：`https://<host>/v1/api/oidc/callback`
   （`server.api_prefix` 非默认时替换前缀）。
 - 允许的 grant：`authorization_code`；强制 PKCE S256 最好（本 RP 永远发 PKCE）。
 - 签名算法 RS256。
@@ -73,7 +73,7 @@ curl -si 'https://your.app/v1/api/oidc/login?tenant=default'
 - `?tenant=` 必须是 `oidc.rp` 里的键，未知租户 400。
 - `tenant` 与 `state` 一起快照进 KV（TTL 10 分钟），callback 只信快照——用户改 query
   动不了已建立的登录流。
-- 登录成功后本地账号按 **`oidc:&lt;tenant>:&lt;sub>`** JIT 创建（首次登录自动建行，不可密码
+- 登录成功后本地账号按 **`oidc:<tenant>:<sub>`** JIT 创建（首次登录自动建行，不可密码
   登录），与本地口令账号天然隔离；`roles` 取该行 `roles` 列。
 - `/oidc/*`、`/idp/*` 路径必须同时加进 **`auth.anonymous_paths` 与
   `tenant.anonymous_paths`**（浏览器跳转腿带不了 Bearer 和租户头）：
@@ -94,7 +94,7 @@ tenant:
 
 ## 4. 用内置 OP（自己当身份源）
 
-在 `oidc:` 段再加 `clients`（OP 侧 client 白名单），并把要自举的租户的 `rp.&lt;tenant>.issuer`
+在 `oidc:` 段再加 `clients`（OP 侧 client 白名单），并把要自举的租户的 `rp.<tenant>.issuer`
 指向本机 OP：
 
 ```yaml
@@ -124,7 +124,7 @@ OP 端点一览（对外标准协议，成功响应为裸 JSON）：
 | `/v1/api/idp/authorize` | GET | 无 OP 会话 → 401 `login required`（先 POST login 持 cookie 重来） |
 | `/v1/api/idp/login` | POST | `{username,password}` → `Set-Cookie: IDP_SESSION`（users 表 + bcrypt） |
 | `/v1/api/idp/token` | POST | form：`grant_type=authorization_code&code&client_id&client_secret&redirect_uri&code_verifier` |
-| `/v1/api/idp/userinfo` | GET | `Authorization: Bearer &lt;access_token>` → `{sub, tenant}` |
+| `/v1/api/idp/userinfo` | GET | `Authorization: Bearer <access_token>` → `{sub, tenant}` |
 
 OP 的登录用户 = 本库 `users` 表（bcrypt）。给用户开号即插一行（`INSERT OR IGNORE INTO
 users (username, password_hash, roles) VALUES (?, '&lt;bcrypt hash>', '[]')`）。
@@ -133,12 +133,12 @@ users (username, password_hash, roles) VALUES (?, '&lt;bcrypt hash>', '[]')`）�
 
 | 位置 | 配置 | 语义 |
 |---|---|---|
-| RP（接谁的 IdP） | `oidc.rp.&lt;tenant>` | tenant → IdP issuer/凭证；`/oidc/login?tenant=<键>` 选用 |
-| OP（谁可以登录） | `oidc.clients.&lt;id>.tenant` | 该 client 的登录会签发到哪个租户（id_token.tenant） |
+| RP（接谁的 IdP） | `oidc.rp.<tenant>` | tenant → IdP issuer/凭证；`/oidc/login?tenant=<键>` 选用 |
+| OP（谁可以登录） | `oidc.clients.<id>.tenant` | 该 client 的登录会签发到哪个租户（id_token.tenant） |
 | 跳转腿豁免 | `tenant.anonymous_paths` | 浏览器 302 带不了租户头；列表外照常 400 |
 | 业务隔离 | `X-TENANT-ID` 头 | 登录后恢复全站强制；行级过滤仍由业务 SQL 自理（框架不自动改写） |
 
-一个 users 表服务多租户时，本地账号名 `oidc:&lt;tenant>:&lt;sub>` 已按租户隔离；**不要**把
+一个 users 表服务多租户时，本地账号名 `oidc:<tenant>:<sub>` 已按租户隔离；**不要**把
 两个不同信任级的 IdP 指向同一租户键。
 
 ## 6. 会话与登出
@@ -157,12 +157,12 @@ users (username, password_hash, roles) VALUES (?, '&lt;bcrypt hash>', '[]')`）�
 | `oidc not configured` | config 没有 `oidc:` 段（或 `oj build` 产物未带新二进制）；段存在但 `issuer`/`private_key_path` 为空 → 启动即报错退出 |
 | 启动报 `oidc private key … parse pkcs8 pem` | 私钥不是 PKCS#8 PEM（`BEGIN PRIVATE KEY`）；用 §1 命令重新生成 |
 | `/oidc/login` → 400 `unknown tenant` | `?tenant=` 不在 `oidc.rp` 键里 |
-| `/oidc/login` → 502 `discovery failed` | IdP 不可达 / issuer 写错 / IdP 无 discovery 端点；`curl &lt;issuer>/.well-known/openid-configuration` 自查 |
+| `/oidc/login` → 502 `discovery failed` | IdP 不可达 / issuer 写错 / IdP 无 discovery 端点；`curl <issuer>/.well-known/openid-configuration` 自查 |
 | `/oidc/callback` → 502 `jwks fetch failed` | jwks_uri 拉取失败（IdP 抖动）；**不会**静默回落本机验签，重试即可 |
 | `/oidc/callback` → 401 `id_token verification failed` | RS256/kid 不匹配（IdP 轮了密钥）或 token 被篡改 |
 | `/oidc/callback` → 401 `id_token claims mismatch` | nonce/iss/aud 与快照不符：多为 issuer 大小写/尾斜杠不一致 |
 | `/oidc/callback` → 401 `invalid or expired state` | state 已用或超 10 分钟；回 `/oidc/login` 重新起流程 |
-| authorize → 400 `redirect_uri not registered` | 跳转地址不在 `oidc.clients.&lt;id>.redirect_uris` 精确表内（scheme/host/端口/路径全都要一致） |
+| authorize → 400 `redirect_uri not registered` | 跳转地址不在 `oidc.clients.<id>.redirect_uris` 精确表内（scheme/host/端口/路径全都要一致） |
 | authorize → 401 `login required` | 正常：先 `POST /idp/login` 拿 IDP_SESSION cookie 再访问 authorize |
 | 登录后业务 API 400 `missing tenant header` | 正常：跳转腿豁免不覆盖业务请求；客户端把 `X-TENANT-ID` 带上 |
 | e2e/测试里 `/oidc/*` 意外 401 | oj-auth 插件 `static GUARD` 进程级只认首次 init 的匿名表——同进程多服务器测试请把用例放进独立测试目标（参考 `oj/tests/oidc_e2e.rs`） |

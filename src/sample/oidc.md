@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:sample/src/oidc/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:sample/src/oidc/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: oidc 模块（RP）
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:sample/src/oidc/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:sample/src/oidc/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oidc 模块（RP，OIDC Relying Party）
@@ -13,7 +13,7 @@ generated: 2026-09-12
 ## 干什么
 
 接 OIDC 身份源（内置 OP 或任意外部标准 IdP），换成本服务自己的 `auth` 会话。
-通用 discovery 对接——换 IdP 只改 `config.yaml` 的 `oidc.rp.&lt;tenant>`，不改代码。
+通用 discovery 对接——换 IdP 只改 `config.yaml` 的 `oidc.rp.<tenant>`，不改代码。
 
 | 端点 | 方法 | 语义 |
 |---|---|---|
@@ -27,7 +27,7 @@ generated: 2026-09-12
   时快照进 KV，callback 不再读 query——用户改不了已建立的登录流。
 - 验签强制：jwks 拉取失败 → 502（**不回落本机验签**）；RS256/kid/exp 之外还比对
   `nonce`、`iss`（=快照 issuer）、`aud` 含快照 client_id。
-- JIT 本地账号名 = **`oidc:&lt;tenant>:&lt;sub>`**（租户+sub 命名空间隔离，跨 IdP 不串号）；
+- JIT 本地账号名 = **`oidc:<tenant>:<sub>`**（租户+sub 命名空间隔离，跨 IdP 不串号）；
   `password_hash` 填 `'!oidc'` 非法占位——`bcrypt.verify` 对非法 hash 恒 false，天然
   不可密码登录，零 schema 变更。
 - 桥接会话不带 tenant（HS256 claims 固定 `{sub,roles}`）：租户继续走 `X-TENANT-ID` 头
@@ -36,7 +36,7 @@ generated: 2026-09-12
 
 ## 怎么改
 
-- **换/加 IdP**：只改 `config.yaml` `oidc.rp.&lt;tenant>`（issuer + client_id/secret/scope）；
+- **换/加 IdP**：只改 `config.yaml` `oidc.rp.<tenant>`（issuer + client_id/secret/scope）；
   IdP 必须支持 code flow + PKCE S256 + RS256 + discovery。
 - **改本地映射策略**（如按 email 而非 sub）：只动 `callback/api.ts` 的 JIT 段——注意保持
   命名空间键，避免跨 IdP 账号混淆。

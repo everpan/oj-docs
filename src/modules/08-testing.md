@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/08-testing.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/08-testing.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 08 · 测试体系
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/08-testing.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/08-testing.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 08 · 测试分类与 `sample/test` vs `sample/tests` 处置方案
@@ -116,7 +116,9 @@ vitest `include: ["tests/**/*.spec.ts"]` —— 见下「方案 B」。
 （本地 `npx vitest run` 12/12 通过）。
 
 > 改写后 L2 新增能力：`mocks/oj-globals.ts` 增加 `lastSqlCalls()`，可断言 handler 发出了
-> 什么 SQL 与绑定参数——这是 L1（只能看响应）看不到的维度。
+> 什么 SQL 与绑定参数——这是 L1（只能看响应）看不到的维度。`db.table(...)` **构造器**（v0.1.17
+> 起 sample 已全面改用）由 `mocks/query-builder.ts` 镜像 `bootstrap.js` 的 API 面，SQL 按
+> 规范形渲染（真实渲染是 sea-query 按方言产出，mock 不复刻方言细节）；未覆盖的形态直接抛错。
 
 ## 5. 运行方式（抄这份）
 
@@ -191,7 +193,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 - 多租户：每个请求（含 login/refresh/logout）都要带 `X-TENANT-ID`，否则 400；
   `client.login(u, p, { "X-TENANT-ID": "default" })` 第三个参数就是干这个的。
-- 鉴权：除匿名路径外都要 `Authorization: Bearer &lt;token>`。
+- 鉴权：除匿名路径外都要 `Authorization: Bearer <token>`。
 - `beforeEach` 是**单一全局钩子**，跨 describe 会互相覆盖 —— 多 describe 文件请在各 `it`
   内联准备（每个用例自己 `client.login`），`sample/tests/cert.test.ts:8` 的做法
   （模块级 `ADMIN`/`USER` 常量 + `beforeEach` 刷新 token）是该文件只有一个 describe 时的特例。

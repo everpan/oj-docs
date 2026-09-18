@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/00-overview.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/00-overview.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 00 · 总览
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/00-overview.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/00-overview.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 00 · 总览：分层、依赖与红线
@@ -64,10 +64,10 @@ generated: 2026-09-12
    - **鉴权** `AuthGuard::verify(path, header)` → 失败 401，匿名放行 `Ok(None)`；
    - **租户** 缺失/空 → 400（`tenant.anonymous_paths` 一层通配豁免）；
    - **体积** 超 `max_upload` → 413；
-   - **multipart** 解析为文本字段 + `Vec&lt;UploadedFile>`；
+   - **multipart** 解析为文本字段 + `Vec<UploadedFile>`；
    - 组装 `RequestInfo { method, params, query, headers, body, tenant_id, user, files }`。
 8. `JsActor::run_module` → `Bridge::run_module`（`src/bridge/mod.rs:544`）：
-   - `versioned_specifier(api_path)` 生成 `file://…?v=&lt;mtime>`（缓存失效依据）；
+   - `versioned_specifier(api_path)` 生成 `file://…?v=<mtime>`（缓存失效依据）；
    - 拼 TLA driver `import(m); m.default[method]()`，方法未导出 → `json.fail(405)`；
    - 按 api_path 祖先目录命中 `StableState.modules` → 注入 `ReqState.module`（归属守卫/bound_db 依据）；
    - `checkout_armed` 武装 `KillSwitch`，超时 → `RunError::Timeout`（408，runtime **不归还池**）；
@@ -81,8 +81,8 @@ generated: 2026-09-12
 | `StableState` | 进程级，`Arc` 共享 | 每个 `JsRuntime` 的 `OpState` | **首次 runtime checkout 之前**装配完；之后只读（`Arc::get_mut` 会 panic） |
 | `ReqState` | 每请求 | `OpState` | `checkout` 时 `reset()`，每次 `run_with` 重置 |
 
-`StableState` 持有：`kv` / `dbs: HashMap&lt;String, Arc&lt;dyn DataAccessor>>` / `client` /
-`registry: Arc&lt;SchemaRegistry>` / `loader` / `blobs` / `bus` / `es` / `plugins` /
+`StableState` 持有：`kv` / `dbs: HashMap<String, Arc<dyn DataAccessor>>` / `client` /
+`registry: Arc<SchemaRegistry>` / `loader` / `blobs` / `bus` / `es` / `plugins` /
 `modules` / `ownership_deny` / `sql_memo` / `boot` / `jwt` / `oidc`。
 `ReqState` 持有：`req` / `response` / `status` / `headers` / `done` / `tx` /
 `ws_sends` / `ws_close` / `module`（**不可 Clone**：活跃事务句柄 clone = 漏回滚）。
@@ -105,7 +105,7 @@ generated: 2026-09-12
 
 | 维度 | dev | release |
 |---|---|---|
-| 入口 | `src/&lt;module>/api.ts` | `dist/&lt;module>-&lt;version>/api.js` |
+| 入口 | `src/<module>/api.ts` | `dist/<module>-<version>/api.js` |
 | 路由来源 | 启动内省每个 `api.ts` 的 `default[m].route` | 直载各模块 `routes.js`（一次 import/模块） |
 | 迁移门禁默认 | `auto`（apply） | `verify`（账本落后/有待应用 → 拒启） |
 | 静态兜底 | 表 miss 时目录镜像回退 | 无 |
@@ -118,7 +118,7 @@ generated: 2026-09-12
 | 加一个配置字段 | `src/config.rs` +（需要时）`oj/src/app.rs` 装配 + `docs/user-manual.md` |
 | 改请求前置逻辑 | `server/src/lib.rs` 的 `handle` / `Pipeline` |
 | 改路由匹配/冲突 | `server/src/routes.rs` |
-| 加一个后端轴 | `oj-plugin-ffi/src/&lt;axis>.rs` + `AXES`（`src/bridge/plugin_loader.rs:428`）+ `probe_axes` + 插件 crate |
+| 加一个后端轴 | `oj-plugin-ffi/src/<axis>.rs` + `AXES`（`src/bridge/plugin_loader.rs:432`）+ `probe_axes` + 插件 crate |
 | 改构建产物 | `oj/src/build_cmd.rs`、`pack.rs`、`manifest.rs` |
 | 改迁移/种子/schema | `oj/src/migrate.rs`、`seed.rs`、`schema.rs`、`checks.rs` |
 | 改测试运行器 | `oj/src/test_cmd.rs`、`oj/src/test_ext.rs`、`oj/src/test_ext/test_bootstrap.js` |

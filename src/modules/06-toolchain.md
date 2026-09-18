@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/06-toolchain.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/06-toolchain.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 06 · 工具链
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/06-toolchain.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/06-toolchain.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 06 · 工具链与辅助 crate（`tools/`、`benches/`、`tests/plugins/`）
@@ -15,8 +15,8 @@ generated: 2026-09-12
 | 子命令 | 行为 |
 |---|---|
 | `xtask bin` | 编译 `oj`（release）+ 拷入 `bin/oj` |
-| `xtask plugin &lt;name>` | 编译 `oj-&lt;name>`（release）+ 拷入 `bin/plugins/&lt;host-triple>/` |
-| `xtask plugin &lt;name> --check` | 经 PluginLoader 预检（ABI/身份/semver/按轴符号），输出 desc 与 provided axes |
+| `xtask plugin <name>` | 编译 `oj-<name>`（release）+ 拷入 `bin/plugins/<host-triple>/` |
+| `xtask plugin <name> --check` | 经 PluginLoader 预检（ABI/身份/semver/按轴符号），输出 desc 与 provided axes |
 | `xtask build` | 编译 oj + 全部第一方插件，并归置 DevKit 文档到 `bin/devkit/` |
 
 产物布局（与发行同形，也与插件加载器默认发现路径同形）：

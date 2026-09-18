@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `oj-module:docs/prd/202609112006-init-template-personal-center-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-module:docs/prd/202609112006-init-template-personal-center-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: init 模板补全
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 oj-module:docs/prd/202609112006-init-template-personal-center-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-module:docs/prd/202609112006-init-template-personal-center-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # ojm init 模板补全：personal-center 模块 + 钉版矩阵收尾
@@ -81,7 +81,7 @@ And typecheck 0 error
 |---|------|------|------|
 | P1 | playground `personal-center/upload` 写不存在的 `users.avatar_base64` 列，上传必 500——缺陷以「参考实现」身份存在，照抄会带病传播 | 实现与参考不符 | T3/T4：模板与 playground 同步补列（playground 的 users 在 `web` 模块，迁移加在 `web/migrations/0002`） |
 | P2 | 版本矩阵语义是「运行时共享包」，tooling（tsc/@types）天然不在内——`pin()` 回退 `*` 是设计缝隙而非配置遗漏 | 反直觉 | T5：矩阵生成处显式加 TOOLING_DEPS 段 |
-| P3 | `@types/react` 无 JS 入口，`import.meta.resolve` 裸说明符失败，首轮矩阵缺它 | 边界 | `installedPkgVersion` 直解 `&lt;name>/package.json`（createRequire） |
+| P3 | `@types/react` 无 JS 入口，`import.meta.resolve` 裸说明符失败，首轮矩阵缺它 | 边界 | `installedPkgVersion` 直解 `<name>/package.json`（createRequire） |
 | P4 | `window.$message` 类型只在 playground `vite-env.d.ts`，模板没有 → personal-center 页 typecheck TS2551 | 模板缺口 | 模板 `env.d.ts` 补 Window.$message 声明（保持脚本形态，不加 `export {}`） |
 | P5 | oj `ownership_guard`（S003）：跨模块读 `users` 必须 manifest `deps` 声明——personal-center 与 web（db 化后的 user-info）都踩到 | 外部约束 | 两个 manifest 补 `deps: { _platform: ^0.1.0 }` |
 

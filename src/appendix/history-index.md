@@ -1,6 +1,6 @@
 ---
 title: 历史与未收录文档
-updated: 2026-09-08
+updated: 2026-09-18
 ---
 
 # 历史与未收录文档
@@ -20,6 +20,12 @@ updated: 2026-09-08
 
 > 站点里的[模块地图](../modules/index.md)与[开发指南](../reference/dev-guide/index.md)是
 > 这些文档的「现行版结论」，一般先看它们就够。
+
+`docs/plans/`（实施计划与设计稿）同样属于过程记录，默认不进站点。**已收录的例外**是已落地
+特性的设计与实施记录：《[邮件投递设计记录](../reference/mail-smtp-design.md)》与
+《[邮件投递实施记录](../reference/mail-smtp-impl/index.md)》——它们是邮件能力当时的决策与执行
+过程，摆在 [mail 专栏](../topics/mail-smtp/index.md) 下；读现行行为请以
+《[邮件投递（SMTP）手册](../reference/mail-smtp.md)》为准。
 
 ## 前端仓库（oj-module）
 

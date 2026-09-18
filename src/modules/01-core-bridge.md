@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/01-core-bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/01-core-bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 01 · 核心运行时
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/01-core-bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/01-core-bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 01 · 核心运行时（`src/`，根 crate `only-js`）
@@ -32,7 +32,7 @@ ESM 入口把它们装配成全局对象。加一个 JS 能力 = 加一个 `op_`
 | bus | `op_bus_publish/subscribe/kind` | `bus.rs` |
 | es | `op_es_search/index/del` | `es.rs` |
 | 内省/fetch/日志 | `op_plugins`、`op_fetch`、`op_log` | `plugins_op.rs`、`fetch.rs`、`log.rs` |
-| 模块解析 | `op_resolve_cjs` | `module_loader.rs` |
+| 模块解析 | `op_resolve_cjs`；别名 `resolve_alias` / 相对 `resolve_relative`（同一份探针，`oj build` 复用） | `module_loader.rs` |
 | OIDC | `op_oidc_sign/verify/info` | `oidc.rs` |
 | WS | `op_ws_send`、`op_ws_close` | `ws.rs` |
 | 证书 | `op_cert_gen`、`op_cert_renew` | `cert.rs` |
@@ -69,9 +69,9 @@ ESM 入口把它们装配成全局对象。加一个 JS 能力 = 加一个 `op_`
 
 - `StableState`（`mod.rs:100`）经 `bridge_ext` 的 `options = { stable }` 注入每个 runtime
   并 `state.put(ReqState::default())`。
-- `ReqState::tx` 为 `Option&lt;Arc&lt;ActiveTx>>`，`reset()` 时 `tx = None` **即 drop = 回滚**；
+- `ReqState::tx` 为 `Option<Arc<ActiveTx>>`，`reset()` 时 `tx = None` **即 drop = 回滚**；
   `Bridge::finalize_tx`（`mod.rs:458`）在 checkin 前再兜底一次。
-- `StableState.sql_memo: Mutex&lt;HashMap&lt;String, Arc&lt;Vec&lt;String>>>>` 缓存裸 SQL 表名提取
+- `StableState.sql_memo: Mutex<HashMap<String, Arc<Vec<String>>>>` 缓存裸 SQL 表名提取
   （守卫热路径）。
 
 ## 4. `Bridge` 执行入口（`mod.rs:269`）
@@ -112,7 +112,7 @@ ESM 入口把它们装配成全局对象。加一个 JS 能力 = 加一个 `op_`
 | `http.rs` | `RequestInfo` / `UploadedFile` |
 | `envelope.rs` | `{code,msg,data}` 与 code→HTTP status 映射 |
 | `crypto.rs` / `cert.rs` / `oidc.rs` / `auth.rs` | 密码学原语、JWS 证书、OIDC 状态、守卫 trait |
-| `module_loader.rs` / `loader.rs` / `transpile.rs` | ESM/CJS 解析（`?v=&lt;mtime>`）、HandlerStore、TS 转译 + mtime 缓存 |
+| `module_loader.rs` / `loader.rs` / `transpile.rs` / `import_scan.rs` | ESM/CJS 解析（`?v=<mtime>`）+ **导入别名**（`#` 模块根 / `#/m/x` src 根，锚点由最近 `manifest.yaml` 派生）、HandlerStore、TS 转译 + mtime 缓存、导入位置 specifier 扫描（`oj build` 与 checks 共用） |
 | `ffi.rs` / `plugin_loader.rs` | 见 [05-ffi-and-plugins.md](/modules/05-ffi-and-plugins) |
 | `inspector.rs` | DevTools inspector WS 桥 |
 | `log.rs` | `op_log` → tracing |

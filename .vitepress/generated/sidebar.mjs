@@ -170,6 +170,60 @@ export const splitNav = {
       "link": "/reference/db-guide/13"
     }
   ],
+  "/reference/mail-smtp-impl": [
+    {
+      "text": "全局约定（每个任务都遵守）",
+      "link": "/reference/mail-smtp-impl/01"
+    },
+    {
+      "text": "阶段 0：准备与基线（先验编译，防返工）",
+      "link": "/reference/mail-smtp-impl/02"
+    },
+    {
+      "text": "阶段 1：FFI 契约（`oj-plugin-ffi`）",
+      "link": "/reference/mail-smtp-impl/03"
+    },
+    {
+      "text": "阶段 2：插件骨架 `oj-mail`",
+      "link": "/reference/mail-smtp-impl/04"
+    },
+    {
+      "text": "阶段 3：配置解析与 transport 构建（插件）",
+      "link": "/reference/mail-smtp-impl/05"
+    },
+    {
+      "text": "阶段 4：有界队列 + worker 池 + FfiFuture + 背压 + drain（插件）",
+      "link": "/reference/mail-smtp-impl/06"
+    },
+    {
+      "text": "阶段 5：消息组装 + 附件 + sendRaw 冲突头（插件）",
+      "link": "/reference/mail-smtp-impl/07"
+    },
+    {
+      "text": "阶段 6：宿主 ops + StableState + 校验 + 附件解析 + 结果存储 + JS 全局",
+      "link": "/reference/mail-smtp-impl/08"
+    },
+    {
+      "text": "阶段 7：装配与端到端",
+      "link": "/reference/mail-smtp-impl/09"
+    },
+    {
+      "text": "阶段 8：加固与验收",
+      "link": "/reference/mail-smtp-impl/10"
+    },
+    {
+      "text": "阶段汇总表",
+      "link": "/reference/mail-smtp-impl/11"
+    },
+    {
+      "text": "阶段小结（执行时逐条追加）",
+      "link": "/reference/mail-smtp-impl/12"
+    },
+    {
+      "text": "统一审查修复（阶段 9：四位评审 → 两批修复）",
+      "link": "/reference/mail-smtp-impl/13"
+    }
+  ],
   "/reference/api-manual": [
     {
       "text": "1. 快速开始",

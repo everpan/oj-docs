@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/plugin-development.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/plugin-development.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 插件开发
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/plugin-development.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/plugin-development.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj 插件开发指南（第三方）
@@ -18,13 +18,13 @@ FFI 契约、ABI_VERSION 纪律、开发/构建/调试全流程。宿主侧装�
 ## 1. 一句话模型
 
 - 插件 = 一个 **cdylib**，导出 `oj_plugin_abi_version` + `oj_plugin_init`，以及**每提供一轴**
-  一个 `oj_plugin_axis_&lt;name>` 符号（全部由入口宏生成，禁止手写 `#[no_mangle]` 绕过）。
+  一个 `oj_plugin_axis_<name>` 符号（全部由入口宏生成，禁止手写 `#[no_mangle]` 绕过）。
 - 宿主与插件只通过 `oj-plugin-ffi` crate 的类型跨边界（**唯一允许**）；tokio/tracing 等
   运行时类型绝不过线。
 - `ABI_VERSION`（u32，**严格相等**）是唯一硬门禁；构建指纹（rustc/契约 crate 版本/triple）
   仅诊断，不匹配告警不拒绝。
 - 注册是**按轴 dlsym 探测**：宿主 `init` 返回后（abi 门禁通过）对探测表 `AXES`（es/db/
-  blob/bus/kv/auth）逐轴 `dlsym("oj_plugin_axis_&lt;axis>")`——查到符号即该插件提供该轴
+  blob/bus/kv/auth/mq/mail）逐轴 `dlsym("oj_plugin_axis_<axis>")`——查到符号即该插件提供该轴
   （符号返回静态 vtable 指针），**缺符号 = 不提供该轴**。vtable 指向的静态表在 init 时
   就绪即可；加新轴/加插件不再改动共享槽位结构。
 
@@ -35,9 +35,9 @@ FFI 契约、ABI_VERSION 纪律、开发/构建/调试全流程。宿主侧装�
 | 类型 | 说明 |
 |------|------|
 | `RString` | stabby `String`，`repr(C)`，`&s[..]` 取 `&str` |
-| `RBytes` | stabby `Vec&lt;u8>` |
-| `RResult&lt;T,E>` | stabby `Result`；构造用 `RResult::Ok(v)` / `Err(e)`，消费侧 `std::result::Result::from(r)` 转标准 Result 后 match（**不能模式匹配**，`?` 对 stabby Result 无效） |
-| `RArc&lt;T>` | stabby `Arc`（`HostContext` 的载体） |
+| `RBytes` | stabby `Vec<u8>` |
+| `RResult<T,E>` | stabby `Result`；构造用 `RResult::Ok(v)` / `Err(e)`，消费侧 `std::result::Result::from(r)` 转标准 Result 后 match（**不能模式匹配**，`?` 对 stabby Result 无效） |
+| `RArc<T>` | stabby `Arc`（`HostContext` 的载体） |
 | `FfiFuture` | `{ state, poll, take, free }` 异步句柄（见 §4） |
 | `HostContext` | 宿主回调集：`log(level, msg)`、`deliver(topic, payload)` |
 | `PluginDescriptor` | `{ name, semver, abi_version, fingerprint, desc }`（见 §7 自描述） |
@@ -56,14 +56,14 @@ authorization) -> RResult&lt;RString, RString>`，ok 值 JSON `null` = 匿名路
 
 | 变更 | 是否 bump ABI |
 |------|--------------|
-| 新增一条轴（新 `oj_plugin_axis_&lt;name>` 符号 + 新 vtable 类型） | **否**（探测式，缺符号 = 不提供） |
+| 新增一条轴（新 `oj_plugin_axis_<name>` 符号 + 新 vtable 类型） | **否**（探测式，缺符号 = 不提供） |
 | 既有轴 vtable 的 `repr(C)` 形状变更（加方法、改签名） | **是** |
 | `PluginDescriptor` / `HostContext` 字段变更 | **是** |
 | cfg JSON 新增可选键（schema 归插件所有） | **否**（向后兼容演进走 cfg 字段） |
 
 - 宿主严格 `plugin_abi == ABI_VERSION` 才加载；不相等 → `plugin ABI mismatch: plugin=N host=M`。
 - 插件构建须对当前 `oj-plugin-ffi` 版本；升级宿主与插件顺序：**先升插件到新 ABI 并验证，
-  再升宿主**（或同版本原子升级）。`cargo xtask plugin &lt;name> --check` 复用宿主 `PluginLoader`
+  再升宿主**（或同版本原子升级）。`cargo xtask plugin <name> --check` 复用宿主 `PluginLoader`
   做 ABI/身份/semver/按轴符号预检（输出 desc 与 provided axes）。
 
 ## 4. FfiFuture 异步桥（唯一异步路径）
@@ -153,8 +153,8 @@ oj_plugin_ffi::oj_plugin_entry!(init, db => oj_plugin_ffi::axis::db(&VTABLE));
   **推荐一律用 `oj_plugin_ffi::axis` 的 helper 传 vtable**（上例形态）：每个 helper 只
   接受该轴的 vtable 类型，写错编译不过。
 
-- 命名：插件 `descriptor.name` 决定存放文件名（`lib&lt;name>.dylib` / `&lt;name>.dll`）；crate 名
-  `oj-&lt;name>` → 构建产物 `liboj_&lt;name>.&lt;ext>`。扫描模式按文件名加载、严格清单模式按
+- 命名：插件 `descriptor.name` 决定存放文件名（`lib<name>.dylib` / `<name>.dll`）；crate 名
+  `oj-<name>` → 构建产物 `liboj_<name>.<ext>`。扫描模式按文件名加载、严格清单模式按
   `plugins:` 键核对名字与 `@semver` pin。
 - 插件不得手写 `#[no_mangle] pub extern "C" fn oj_plugin_*` 绕过宏（descriptor 内 abi_version
   二次校验兜底）。
@@ -194,13 +194,13 @@ cargo xtask plugin <name> --check   # PluginLoader 预检（ABI/身份/semver/�
 ./bin/oj server -c config.yaml --api-path src
 ```
 
-**panic 归因**：panic hook 已输出插件名 + 宿主指纹。若需源码级调试，在 `bin/plugins/&lt;triple>/`
+**panic 归因**：panic hook 已输出插件名 + 宿主指纹。若需源码级调试，在 `bin/plugins/<triple>/`
 旁保留对应构建的符号文件（`symbols/` 目录），`lldb`/`gdb` 附加后 `bt` 定位。
 
 ### 8.1 Windows 构建踩坑记录
 
 **xtask.exe 被锁（Access is denied, os error 5）**（2026-08-28，已修复）：
-`cargo run -p xtask -- plugin &lt;name>` 以 `-p` 归一化链接并启动 `xtask.exe`；xtask 内部再调
+`cargo run -p xtask -- plugin <name>` 以 `-p` 归一化链接并启动 `xtask.exe`；xtask 内部再调
 `cargo build --workspace --release` 时，`--workspace` 与 `-p` 的 feature 归一化不同，cargo 会
 认为 xtask 需要 relink，尝试删除**运行中的** `xtask.exe` —— Windows 锁定运行中的 exe，报
 `os error 5`。修复：xtask 的 `build_workspace_release()` 固定带 `--exclude xtask`
@@ -222,4 +222,4 @@ xtask 也不是发行产物（`bin/` 只放 oj + 插件），排除不影响其�
 | `oj-kv-redis` | kv | redis | core `bridge/kv.rs` RedisKV |
 | `oj-auth` | auth | jsonwebtoken | core `bridge/auth.rs`（守卫；auth 端点已 JS 化） |
 
-> 所有第一方插件源码统一位于 `plugins/`；构建产物（cdylib）归置 `bin/plugins/&lt;triple>/`，由 `.gitignore` 忽略。
+> 所有第一方插件源码统一位于 `plugins/`；构建产物（cdylib）归置 `bin/plugins/<triple>/`，由 `.gitignore` 忽略。

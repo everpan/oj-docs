@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/05-ffi-and-plugins.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/05-ffi-and-plugins.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 05 · FFI 与插件
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/05-ffi-and-plugins.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/05-ffi-and-plugins.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 05 · FFI 契约与插件（`oj-plugin-ffi/` + `plugins/`）
@@ -20,7 +20,7 @@ generated: 2026-09-12
 | `HOST_FINGERPRINT` | rustc + crate 版本 + triple | 仅诊断，不匹配只告警 |
 | `PluginDescriptor` | `{ name, semver, abi_version, fingerprint, desc }` | 任何字段变更都要 bump ABI |
 | `HostContext` | `{ log(level,msg), deliver(topic,payload) }` | `RArc` 共享；插件互不可见（不提供 registry lookup） |
-| `RString/RVec&lt;T>/RBytes/RResult&lt;T,E>/RArc&lt;T>` | stabby 类型别名 | 跨边界安全 |
+| `RString/RVec<T>/RBytes/RResult<T,E>/RArc<T>` | stabby 类型别名 | 跨边界安全 |
 
 ### `oj_plugin_entry!`（`lib.rs:89`）
 
@@ -31,7 +31,7 @@ oj_plugin_entry!(init, kv => &KV_VTABLE, auth => &AUTH_VTABLE);
 ```
 
 展开出：`oj_plugin_abi_version()`、`oj_plugin_init()`（**内建 `catch_unwind`**，
-panic → `RResult::Err`）、每轴一个 `oj_plugin_axis_&lt;name>()`（返回擦除为 `*const c_void`
+panic → `RResult::Err`）、每轴一个 `oj_plugin_axis_<name>()`（返回擦除为 `*const c_void`
 的静态 vtable 指针）。轴名强制小写。
 
 ⚠️ 宏**只保护 init**：vtable 方法须在实现侧用 `catch_value` / `catch_future` / `catch_void`
@@ -58,17 +58,17 @@ panic → `RResult::Err`）、每轴一个 `oj_plugin_axis_&lt;name>()`（返回
 ### 按轴 dlsym（ABI 7 起，加轴零破坏）
 
 ```rust
-pub const AXES: &[&str] = &["es", "db", "blob", "bus", "kv", "auth"];   // :428
+pub const AXES: &[&str] = &["es", "db", "blob", "bus", "kv", "auth", "mq", "mail"];   // :432
 ```
 
-`probe_axes`（:432）对每个轴 `dlsym("oj_plugin_axis_&lt;name>")`：
+`probe_axes`（:432）对每个轴 `dlsym("oj_plugin_axis_<name>")`：
 **缺符号或返回 null = 不提供该轴（非错误）**。加新轴 = `AXES` 加一行 + vtable 类型 +
 `Registrations` 加字段，`probe_axes` 的 `match` 有 `unreachable!` 兜底防两表失步。
 
 ### 插件目录四级解析（`resolve_plugins_dir`，:233）
 
-`OJ_PLUGINS_DIR` 环境变量 > config 的 `plugins_dir` > `&lt;exe>/plugins` >
-`&lt;workspace_root>/bin/plugins`，各自再拼 `&lt;host-triple>/`。
+`OJ_PLUGINS_DIR` 环境变量 > config 的 `plugins_dir` > `<exe>/plugins` >
+`<workspace_root>/bin/plugins`，各自再拼 `<host-triple>/`。
 显式配置（1/2）目录不存在 → Err；默认（3/4）不存在 → `Ok(None)`（零插件）。
 
 ### 装配模式

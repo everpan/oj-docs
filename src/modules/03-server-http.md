@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/03-server-http.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/03-server-http.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 03 · HTTP 服务
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/03-server-http.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/03-server-http.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 03 · HTTP 服务（`server/`）
@@ -26,14 +26,14 @@ Router::new()
   .with_state(AppState { .. })
 ```
 
-`AppState`（`lib.rs:43`）持有 `table: RouteTable`、`fallback: Option&lt;Routes>`（dev 目录镜像）、
+`AppState`（`lib.rs:43`）持有 `table: RouteTable`、`fallback: Option<Routes>`（dev 目录镜像）、
 `actor: JsActor`、`timeout`、`static_root`、`pipeline: Pipeline`、`base`、
-`certificate_status` / `certificate_valid_until`（`Arc&lt;RwLock<..>>`，热加载共享）、
-`plugins: Arc&lt;Vec&lt;PluginInfo>>`。
+`certificate_status` / `certificate_valid_until`（`Arc<RwLock<..>>`，热加载共享）、
+`plugins: Arc<Vec<PluginInfo>>`。
 
 `Pipeline`（`lib.rs:66`）是 handle 前置管线的**唯一扩展点**：
-`tenant_header` / `tenant_anon` / `auth: Option&lt;Arc&lt;dyn AuthGuard>>` / `max_upload` /
-`blob: Option&lt;Arc&lt;dyn BlobBackend>>`。
+`tenant_header` / `tenant_anon` / `auth: Option<Arc<dyn AuthGuard>>` / `max_upload` /
+`blob: Option<Arc<dyn BlobBackend>>`。
 
 ## 2. `handle()` 分支优先级（`lib.rs:263`）
 
@@ -45,7 +45,7 @@ Router::new()
 4. **租户**：缺失/空 → 400；`tenant.anonymous_paths` 命中则豁免缺失（OIDC 302 带不了头），
    但已带的头仍注入。
 5. **体积**：`body.len() > max_upload` → 413（超 2x 的已在 axum 层裸 413）。
-6. **multipart**：文本字段并入 body，`Vec&lt;UploadedFile>` 入 `RequestInfo.files`。
+6. **multipart**：文本字段并入 body，`Vec<UploadedFile>` 入 `RequestInfo.files`。
 7. **路由**：`normalize` → `RouteTable.lookup` → `Hit` 执行 / `Conflict` 500 /
    `MethodNotAllowed` 405 / `NotFound` 继续。
 8. **dev 目录镜像兜底**：`Routes::resolve`，且被 `.route` 替换掉的方法不复活（`is_replaced`）。
@@ -70,7 +70,7 @@ Router::new()
 - `entries_from_value`（:414）：release 从 `routes.js` default 导出行集反解。
 - `bridge_introspector`（:453）：**每文件一线程 + 独立 current_thread runtime**
   （`Bridge` 是 `!Send`，嵌套 runtime 会 panic）。
-- `bridge_default_reader`（:477）：release 直载 `dist/&lt;m>-&lt;v>/routes.js`，同构。
+- `bridge_default_reader`（:477）：release 直载 `dist/<m>-<v>/routes.js`，同构。
 
 ## 4. JS actor（`actor.rs`）
 
@@ -83,7 +83,7 @@ actor 线程内跑 `current_thread` runtime，**串行**执行 job；并发度 =
 
 > 逐行走读与 JS 侧用法见 [../websocket.md](/reference/websocket)（教学文件）。
 
-- `mirror_routes`：`&lt;root>/&lt;dir>/ws.ts`（优先）/`ws.js` → `GET {base}/&lt;dir>/ws`；
+- `mirror_routes`：`<root>/<dir>/ws.ts`（优先）/`ws.js` → `GET {base}/<dir>/ws`；
   根级 `ws.ts` → `{base}/ws`；每文件一池（`RoutePool`，含 `ws.workers_per_route` /
   `ws.idle_linger_ms`）。⚠️ release 下 root=dist，URL 含版本段（`news-0.1.0/ws`），
   v0.2 已知限制。
@@ -110,7 +110,7 @@ actor 线程内跑 `current_thread` runtime，**串行**执行 job；并发度 =
 
 - **终端输出的完整镜像落盘**：stdout/stderr 各自重定向到独立管道，后台线程逐块写回原终端
   与日志文件（去 ANSI）。`println!`/`eprintln!`/panic/tracing 全部同形落盘。
-- 每次启动一个新文件 `server-<启动秒>_&lt;pid>.log`；按大小滚动（`base.1.log`…），保留 N 个。
+- 每次启动一个新文件 `server-<启动秒>_<pid>.log`；按大小滚动（`base.1.log`…），保留 N 个。
 - `init` 幂等；镜像线程与 fd 按进程生命周期泄漏（对齐 `non_blocking` guard 惯例）。
 - **默认关闭终端输出**（`server.console_log` / `--console-log` 打开）；非 unix 无落盘，
   强制保留终端输出并告警。

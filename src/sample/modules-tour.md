@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:sample/MODULES.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:sample/MODULES.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: sample 模块导览
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:sample/MODULES.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:sample/MODULES.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # sample 模块导览 —— 通过 12 个模块学会 oj
@@ -56,10 +56,10 @@ AUTH=(-H "Authorization: Bearer $TOKEN" -H 'X-TENANT-ID: default')
 | `manifest.yaml` | 模块身份：name/desc/version + `tables: [account]`（表归属声明，与 schema.yaml 双向一致 S005） |
 | `schema.yaml` | 声明式表结构：account 表的列/主键/索引——启动时自动收敛，不用手写 CREATE |
 | `seed.sql` | 幂等种子（`INSERT OR IGNORE`），每次启动重放：neo / trinity 两个账号 |
-| `account/api.ts` | 完整 get/post/put：`db.query(sql, params)` 值走绑定参数（防注入红线），`json.ok` / `json.fail` 信封 |
+| `account/api.ts` | 完整 get/post/put：`db.table(...)` 构造器 + 绑定参数（select/where/insert/update/delete，防注入红线），`json.ok` / `json.fail` 信封 |
 | `item/api.ts` | 路径参数：`detail.route = "{id}"` → `/v1/api/user/item/{id}`，`http.param("id")` 取值 |
 | `profile/detail/api.ts` | 目录任意深度嵌套成三层路由，仅 4 行 |
-| `_shared/validate.ts` | 模块内共享工具（`requireRole`），被本模块和 order 模块同时 import |
+| `_shared/validate.ts` | 模块内共享工具（`requireRole`）：本模块用别名 `#_shared/validate`，order 模块用 `#/user/_shared/validate` 跨模块引用 |
 
 ```bash
 curl "${AUTH[@]}" 'http://localhost:9778/v1/api/user/account/?id=1'
@@ -80,7 +80,7 @@ curl "${AUTH[@]}" -X POST -d '{"name":"morpheus","role":"admin"}' \
 | `manifest.yaml` | `deps: { user: "^0.1.0" }`：SQL 里 join 了 `user` 模块的 `account` 表，必须显式声明（表归属守卫，`ownership_guard: deny` 下违规直接拒绝） |
 | `detail/api.ts` | cache-aside 模式：`kv.get` 未命中 → 查库 → `kv.set` 回填，响应里带 `cached` 标记 |
 | `account/api.ts` | `import { escapeHtml } from "escape-goat"` —— vendor 的纯 ESM npm 包直接参与请求处理 |
-| `list/api.ts` | 裸 SQL join + **跨模块相对导入** `import { requireRole } from "../../user/_shared/validate"`（代码复用与表 deps 双演示） |
+| `list/api.ts` | 裸 SQL join + **跨模块别名导入** `import { requireRole } from "#/user/_shared/validate"`（与 `deps.user` 配套：别名跨模块引用必须声明 deps，S008 门禁） |
 
 ```bash
 curl "${AUTH[@]}" -X POST -d '{"account_id":1,"amount":9.9,"no":"A001"}' \
@@ -91,7 +91,7 @@ curl "${AUTH[@]}" 'http://localhost:9778/v1/api/order/list/?role=admin'
 
 ## ④ auth_demo + auth —— 鉴权两兄弟
 
-- **auth_demo** 是最小受保护路由：`me/api.ts` 需 `Authorization: Bearer &lt;token>`，
+- **auth_demo** 是最小受保护路由：`me/api.ts` 需 `Authorization: Bearer <token>`，
   handler 里 `http.user` = `{id, roles, claims}`（验签后的身份，由 oj-auth 插件守卫
   注入）；`health/api.ts` 同为受保护路由（不带 token → 401 信封——先试试这个
   401，再带 token 对比）。真正匿名的只有框架内置 `/v1/api/health`（证书状态）与
@@ -218,7 +218,9 @@ demo（admin）200、trinity（user）实测 403。
 | 绝对路径挂载 `get.route` | admin | `home/pie/api.ts` |
 | `db` 参数化 CRUD / 声明式表 | user · admin | `account/api.ts` + `schema.yaml` |
 | 跨模块表（deps 声明） | order · admin · auth | 各 `manifest.yaml` |
-| 跨模块代码复用 | order | `list/api.ts` |
+| 跨模块代码复用 | order · idp · oidc | `list/api.ts` · `token/api.ts` · `callback/api.ts` |
+| 导入别名 `#x`（本模块根）/ `#/m/x`（src 根） | user · admin · cert · auth · idp · oidc · order | 见下方「导入别名」 |
+| 相对导入（既有写法，仍受支持） | admin · cert · idp · oidc | `role-item/api.ts` · `item/api.ts` · `login/api.ts` · `logout/api.ts` |
 | 第三方 npm 包（vendor ESM） | order | `account/api.ts` |
 | kv 缓存 / 会话存储 | order · auth | `detail/api.ts` · `_shared/session.ts` |
 | JWT 签发与校验（bcrypt/jwt/crypto） | auth | `login/api.ts` + `_shared/session.ts` |
@@ -230,6 +232,38 @@ demo（admin）200、trinity（user）实测 403。
 | 长任务池 / `tasks.stopping/sleep` | src/tasks | `task_demo.ts` |
 | Kafka/RabbitMQ 命名客户端 | src/tasks + config | `kafkas:`/`rabbits:` 段（消费见 api-manual §6） |
 | seed.sql / schema.yaml / migrations | user · order · _platform | 各模块目录 |
+
+## 导入别名（`#` 本模块根 / `#/m/x` src 根）
+
+共享工具代码不再需要数 `../`。写法与目录深度无关，模块搬目录也不用改引用：
+
+```ts
+// sample/src/user/account/api.ts（本模块共享库）
+import { positiveId, requireRole } from "#_shared/validate";        // → src/user/_shared/validate.ts
+// sample/src/order/list/api.ts（跨模块复用 user 的共享库）
+import { requireRole } from "#/user/_shared/validate";              // 首段 = 模块目录名
+// sample/src/oidc/callback/api.ts
+import { issueTokens } from "#/auth/_shared/session";
+```
+
+- 后缀补全同相对导入（`.ts` → `.js` → `/index.ts` → `/index.js`）；别名路径禁 `..`/空段。
+- **跨模块别名要在 `manifest.yaml` 声明 `deps`**（`idp`/`oidc` 因此补了 `auth: "^0.1.0"`）——
+  `oj build` 的 S008 会拦下来。既有**相对**跨模块引用不追溯，所以本仓里两种写法并存：
+  `user/account`、`admin/menu-list`、`cert/renew`、`auth/refresh`、`order/list`、`idp/token`、
+  `oidc/callback` 用别名；`admin/role-item`、`cert/item`、`idp/login`、`idp/authorize`、
+  `oidc/login`、`oidc/logout` 仍是相对路径。
+- **只能在模块内用**：`sample/tests/*.test.ts` 在模块外（无 `manifest.yaml` 祖先）→ 继续用
+  相对路径（见 `tests/oidc.test.ts`）。
+- `oj build` 会把别名实化成版本目录相对路径，产物里不含 `#`；任务池（`src/tasks/`）是
+  非版本化资产，**不允许**用别名。
+- 编辑器：`tsconfig.json` 的 `paths` 已镜像（`"#/*": ["./src/*"]` + `"#*": [各模块 /*]`；
+  值必须带 `./` 前缀——无 `baseUrl` 时非相对值会被 vite/esbuild 警告）；
+  L2 单测（vitest）另走 `unit/vitest.config.ts` 的 `resolveId` 插件，同规则镜像。
+  > `#*` 是**手维护**的模块清单：新增模块时要把它加进该数组，否则编辑器对 `#x` 会标红
+  > （oj 运行期不受影响——锚点来自文件位置，与 tsconfig 无关）。
+- 本地 import 的目标必须是 `.ts`；`manifest.yaml` 只能出现在模块根（这两条都由 `oj build` 拦截）。
+
+完整规则与边界见 [../docs/devkit/api-manual.md](/reference/api-manual/) §5。
 
 ## 数据层文件速览
 

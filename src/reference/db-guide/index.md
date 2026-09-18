@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/db-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/db-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: db 新人手册
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/db-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/db-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 # db 新人手册 —— 配置 + JS 全量数据访问
 

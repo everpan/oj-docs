@@ -10,19 +10,26 @@
 
 | 源 | 仓库（相对 oj-docs 根） | 取哪些 |
 |---|---|---|
-| backend（默认） | `../only-js` | `docs/`、`docs/devkit/`、`docs/modules/`、`sample/` |
+| backend（默认） | `../oj-bin` | `docs/`、`docs/devkit/`、`docs/modules/`、`docs/plans/`（只取已落地特性的设计/实施记录）、`sample/` |
 | frontend | `../oj-module` | `docs/prd/`（现行手册与设计稿；个别现行文档取自 `docs/archive/prd/`） |
+
+> **名字别混**：本地源仓库目录叫 `oj-bin`（GitHub 仓库 `everpan/oj-bin`）；`only-js`
+> 是根 crate 名与项目代号，源文档正文里大量出现，**不要**把正文里的 `only-js` 改成
+> `oj-bin`。本文档与脚本里提到「源仓库目录 / 生成页前缀」时用 `oj-bin`。
 
 - 两个源仓库通常与本仓库同级；**任一源仓库缺席时 sync 自动跳过**（打印提示后退出，
   沿用已提交的生成产物）——因此 build/dev 不依赖外部仓库，克隆 oj-docs 单仓库即可构建。
 - 两个仓库的 `docs/archive/`、`docs/superpowers/` 都是历史文档，指向它们的链接统一
   改写到 `/appendix/history-index`（被收录的除外——路由表优先命中）。
+- `docs/plans/` 是过程记录（实施计划与设计稿），默认不进站点；**例外**是已落地特性被
+  显式登记进 `ENTRIES` 的那几篇（当前：邮件投递的设计/实施记录，挂在 mail 专栏下），
+  它们作为「当时怎么设计的」提供，读现行行为仍以 `/reference/*` 手册为准。
 
 ## 2. 目录约定（能改 / 不能改）
 
 | 路径 | 内容 | 能否手改 | 入库 |
 |---|---|---|---|
-| `src/guide/`、`src/index.md`、`src/appendix/` | 学习路径、首页、术语表（本站原创） | ✅ | ✅ |
+| `src/guide/`、`src/index.md`、`src/appendix/`、`src/topics/` | 学习路径、首页、术语表、后端专题栏目（本站原创） | ✅ | ✅ |
 | `.vitepress/config.mts`、`.vitepress/theme/` | 站点配置与主题 | ✅ | ✅ |
 | `scripts/` | 同步与死链检查脚本 | ✅ | ✅ |
 | `docs/`（本目录） | 维护者文档 | ✅ | ✅ |
@@ -30,7 +37,7 @@
 | `.vitepress/generated/` | 脚本生成的 sidebar 数据 | ❌ | ✅（生成即入库） |
 | `.vitepress/cache/`、`.vitepress/dist/`、`node_modules/` | 缓存/产物 | — | ❌ |
 
-生成页顶部都有 banner 与 `gen-note`（含 `only-js:` / `oj-module:` 仓库前缀与生成日期），
+生成页顶部都有 banner 与 `gen-note`（含 `oj-bin:` / `oj-module:` 仓库前缀与生成日期），
 看到就别手改——改了会在下次 sync 被覆盖。
 
 ## 3. 命令与构建流程
@@ -60,7 +67,7 @@ pnpm run verify      # sync → check → build 一条龙；提交前必跑
 
 ```js
 { src: 'docs/websocket.md', route: '/reference/websocket', title: 'WebSocket' }
-// from: 'frontend' 时取 oj-module 源（默认 backend = only-js）
+// from: 'frontend' 时取 oj-module 源（默认 backend = oj-bin）
 // split: true 强制切页；不写则正文 > SPLIT_LINES(600) 行时自动切
 ```
 
@@ -94,8 +101,26 @@ pnpm run verify      # sync → check → build 一条龙；提交前必跑
 | 处理 | 原因 |
 |---|---|
 | 代码块语言 `cli` / `bat` / `cmd` / `sh` → `bash` | shiki 不认 `cli`，会掉高亮 |
-| 代码块外的 `<config_dir>` / `Promise<T>` 的 `<` → `&lt;` | md 会被当 Vue 模板编译，裸标签 = 未闭合元素，build 直接失败 |
+| 正文里 `<config_dir>` / `Promise<T>` 的 `<` → `&lt;` | md 会被当 Vue 模板编译，裸标签 = 未闭合元素，build 直接失败 |
+| 代码（围栏块 + 行内代码）里的 `<` 不转义 | markdown-it 自己会转义；脚本再转一次就成 `&amp;lt;`，页面显示成 `&lt;`（曾线上 380 处） |
+| 白名单标签需正文里有成对 `</tag>` 才算真 HTML | 否则 `<a>` 这种占位符会被当未闭合元素，build 直接失败 |
 | frontmatter 注入 `title` / `generated` | 源文档自带 frontmatter 时做合并不覆盖 |
+
+## 4.1 后端专题栏目（`src/topics/`，本站原创）
+
+专题是**按主题横排**的第二条导航路径，与「按体例纵排」的 `/reference/*` 互补。当前 5 个专栏：
+db / tenant / websocket / oidc / mail，各一个 `index.md`（`src/topics/<name>/index.md`）+ 总览页
+`src/topics/index.md`，在 `config.mts` 的「后端专题」分组与 nav 里登记。
+
+规则（改动前先看这三条）：
+
+1. **不复制正文**：专栏页只写一句话导读 + 文档清单，正文永远只有 `/reference/*` 等页面上的
+   那一份。复制正文等于给自己加一处必然过期的副本。
+2. **侧边栏不重复**：文档归入某个专栏后，要从「后端 · API 参考」/「后端 · 手册原文」移除，
+   否则同一篇在侧边栏出现两次。学习路径（`src/guide/`）、模块地图（`src/modules/`）、
+   sample 里的页属于**跨区引用**，允许同时出现在原分组和专栏里。
+3. **新增专栏**：加 `src/topics/<name>/index.md` → 在 `config.mts`「后端专题」`items` 里
+   加一项（`link` 带尾斜杠，因为是目录页）→ 跑 `pnpm run verify`。
 
 ## 5. 死链检查（scripts/check-links.mjs）
 
@@ -142,12 +167,13 @@ pnpm run verify      # sync → check → build 一条龙；提交前必跑
    预期切页的写 `split: true`）；
 2. `pnpm run sync`；
 3. 新分组的话在 `.vitepress/config.mts` 的 `sidebar` 加条目（切页文档引用
-   `splitNav['<route>']`，链接带尾斜杠）；
+   `splitNav['<route>']`，链接带尾斜杠）；文档属于某个主题的话，归进「后端专题」下
+   对应专栏（见 §4.1），并从原分组移除；
 4. `pnpm run verify` 确认无死链、构建通过。
 
 ### 新增 sample 模块（后端）
 
-在 `../only-js/sample/src/<模块>/` 丢一份 `README.md` 即可，sync 自动收录并进 sidebar。
+在 `../oj-bin/sample/src/<模块>/` 丢一份 `README.md` 即可，sync 自动收录并进 sidebar。
 
 ### 源仓库文档更新后的发布
 

@@ -1,13 +1,13 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/devkit/SKILL.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/devkit/SKILL.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 name: oj-api-dev
 description: 在 oj (only-js) 框架业务项目中开发 API 模块时使用——新增或修改 api.ts / ws.ts handler、manifest.yaml、模块测试，或排查路由/信封/鉴权/租户行为时。触发场景：写 handler、建模块、目录镜像路由、.route 参数路由、json 信封、db 查询、Kafka/RabbitMQ 消费任务、tasks 长任务、oj test。
 title: oj 开发 skill
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/devkit/SKILL.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/devkit/SKILL.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj API 模块开发
@@ -21,6 +21,9 @@ generated: 2026-09-12
    之类）→ §6 末「ext_boot.js」，不要去改 handler。**
    **接 Kafka/RabbitMQ 或写长任务 → §6「命名 MQ 客户端与长任务」**（任务文件放
    `src/tasks/`，命名 `task_{name}.*` / `{name}_task.*`）。
+   **发邮件 → §6「mail」**（配置顶层 `smtp:` + `oj-mail` 插件；`send/sendSync/enqueue/result/sendRaw`；
+   **发件人/收件人白名单 fail-closed**，空表即拒；附件用 `{blobKey}`/`{path}` 引用，勿内联 base64）。
+   完整手册见仓库 `docs/mail-smtp.md`。
 2. **脚手架**：模块 = `src/<模块名>/`（首层子目录），内放 `manifest.yaml`
    （`name` 必须等于目录名，违反启动失败）+ 子目录 `api.ts`。
 3. **写 handler**：遵守下方红线；响应一律 `json.ok` / `json.fail` 收口。
@@ -30,7 +33,7 @@ generated: 2026-09-12
 ## 红线（不可违反）
 
 - **SQL 注入**：动态标识符（表名/列名）**只**来自 `db.table()` 查询构造器（白名单），
-  绝不来自 JS 字符串拼接；值**只**通过绑定参数（`db.query("... where id = ?", [id])`）。
+  绝不来自 JS 字符串拼接；值**只**通过绑定参数（`db.query("... where id = ?", [id])` 或构造器的 `value`）。
 - **方法名**：DELETE 的方法名是 `del`，不是 `delete`（`get/post/put/del/patch/head/options`）。
 - **信封**：业务响应只经 `json.ok(data)` / `json.fail(code, msg, data?)` 写回，
   HTTP 状态 = `code`（0→200）；标准协议端点（对外契约 JSON）可用 `json.raw(data)`
@@ -50,6 +53,10 @@ generated: 2026-09-12
 - [ ] 用了 `.route`？→ 确认镜像路径已按替换语义放弃；确认 build 会剥 `.route`
 - [ ] 响应全部走 `json.ok`/`json.fail`；错误码符合 §7 场景表
 - [ ] SQL 全部参数化；动态标识符全部走构造器
+- [ ] 共享代码用别名（`#_shared/x` 本模块根 / `#/user/_shared/x` src 根），不再数 `../`；
+      跨模块别名已在 `manifest.deps` 声明；本地导入目标都是 `.ts`
+- [ ] 用了 `mail`？→ `smtp:` 段已配对应 profile，且 `allowed_from`/`allowed_recipients` **非空**
+      （空表 fail-closed）；附件用 `{blobKey}`/`{path}` 引用而非内联
 - [ ] L2 + L1 测试跑过并全绿
 
 ## 常见陷阱速查
@@ -80,6 +87,21 @@ generated: 2026-09-12
 | WS 路由 404（文件明明在） | 文件名必须小写 `ws.ts`/`ws.js`——`WS.ts` 无效（v0.1.5 约定） |
 | （v0.1.9 已消除）旧帧循环的 const 重复声明 | 新契约为生命周期钩子：模块每 Worker 预载一次——无需处理；可变跨帧状态放 `sess.state`（模块作用域只是只读缓存），见 api-manual §ws.ts |
 | WS 帧内 `bus.publish` 自己也收到 | 自回声语义：fan-out 不排除本连接——按字段客户端过滤或发布到别的 topic |
+| 查询被拦截 / 启动报 `tenant_id` 相关错（v0.1.15 sql_guard） | `sql_guard: "deny"` 拦截租户条件不匹配的查询（`"warn"` 只告警）：跨租户操作（对账/报表）走 `await db.asSystem()`（请求级 + 审计日志）；共享表须 schema.yaml `tenant: false` **且** config `tenant.shared_allow` 列出，双声明才豁免 |
+| 裸 SQL 被 deny 拦「遗漏 tenant_id」 | `db.query`/`db.exec` 的字面检查（best-effort）要求 SQL 显式带租户条件——优先改走 `db.table()` 构造器（自动注入），系统身份走 `db.asSystem()` |
+| WS 二进制帧 `http.body` 是 null | 设计如此（不做 UTF-8 有损转换）——取字节用 `await http.bodyBytes()`（v0.1.16） |
+| 回显二进制协议帧型变成 Text | `ws.send` 帧型由参数类型决定：Uint8Array → Binary(0x2)，string → Text(0x1)——别把字节 decode 成 string 再发 |
+| `import "#x"` 报「未找到模块根」 | 该文件不在模块内（`tests/` 用例、`src/tasks/` 任务池），或 `--api-path` 在 project root 之外——这些场景用相对路径（v0.1.18 别名锚点 = 向上最近的 `manifest.yaml`） |
+| `oj build` 报「别名 #/m/x 跨模块引用 M 未声明依赖」 | S008 门禁：`M/manifest.yaml` 补 `deps: { M: "^<版本>" }`，或把共享代码放进本模块（`#x` 无需声明） |
+| `oj build` 报「扩展名不会进产物」 | 本地导入目标是 `.js`/`.json`——产物只转译 `.ts`，改目标为 `.ts` 或内联 |
+| `oj build` 报「manifest.yaml 只能出现在模块根」 | 子目录里多了 `manifest.yaml`——它会被当成 `#` 别名的新锚点，删掉即可 |
+| `mail.send` 报 `mail not configured` | 未配顶层 `smtp:` 段，或 `oj-mail` 插件未加载（`cargo xtask plugin mail`） |
+| `mail.send` 返回 `code:5`（白名单） | `allowed_from`/`allowed_recipients` **空表 fail-closed**——显式列出；或发件人/收件人**未全等命中**条目（条目只能是完整地址或 `@domain`，不做子域通配） |
+| `mail.send` 返回 `code:5`（附件路径） | `{path}` 越出 project root（`ensure_within` 拒绝）——用仓内相对路径或改 `{blobKey}` |
+| `enqueue` 拿不到结果 | 返回的是 `{code:0,data:{jobId}}`——取 `res.data.jobId`（宿主生成，传入的 jobId 会被剥掉）；完成经 `bus.subscribe("mail.result")`。**跨 profile/模块/租户查不到**是设计（`mail.result` 按归属过滤） |
+| `mail.enqueue` 返回 `code:4` | 队列满（背压）：调大 `smtp.queue_capacity` / `workers`，或降低并发 |
+| `code !== 0` 想自动重试 | **不行**：`2`/`3` 未启用，永久失败与瞬时失败都归 `1`，分不出可重试性——见 `api-manual.md` §6 |
+| IDE 报 `Cannot find module '#_shared/x'` | 该文件尚不存在或不在模块内；`paths` 无法表达「模块相对」别名——创建 `<模块>/_shared/x.ts` 即解析（`global.d.ts` 已加 `#*` 通配兜底消除报错） |
 
 ## 手册
 
@@ -88,4 +110,10 @@ generated: 2026-09-12
 10 配置 config.yaml / 11 构建与发布 / 12 运维要点 / 13 安全红线与已知限制。
 
 类型提示：把同目录 `global.d.ts` 拷进业务项目源码根，编辑器/agent 即获得全局对象
-（json/http/db/kv/blob/bus/es/Kafka/RabbitMQ/tasks…）的完整类型。
+（json/http/db/kv/blob/bus/es/mail/Kafka/RabbitMQ/tasks…）的完整类型。
+`#` 开头的导入别名（`paths` 无法表达「引用方模块相对」解析）由同目录 **`oj-modules.d.ts`**
+兜底（**非模块** `.d.ts` 里的 `declare module "#*"`，须一并拷贝并纳入 tsconfig `include`）：
+已存在的别名仍走真实类型，未创建/不在枚举内的降级为 `any` 且不报 TS2307。
+
+邮件投递完整手册（架构/附件与 `sendRaw` 语义/反馈通道/安全/运维/已知限制）：
+仓库 `docs/mail-smtp.md`。

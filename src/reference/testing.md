@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/testing.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/testing.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 测试手册
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/testing.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/testing.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 测试开发手册（Testing Guide）
@@ -40,7 +40,7 @@ sample/
     └── *.spec.ts
 ```
 
-L1 测试目录由 `oj test -t/--tests &lt;dir>` 指定，相对**配置文件所在目录**；默认 `tests`。
+L1 测试目录由 `oj test -t/--tests <dir>` 指定，相对**配置文件所在目录**；默认 `tests`。
 
 > 两个目录**不能合并**：运行器互斥（`oj test` 跑不了 `import "vitest"`，vitest 跑不了
 > `client` 全局）。后缀也刻意分开（`.test.ts` = L1 / `.spec.ts` = L2）。
@@ -94,7 +94,7 @@ describe("user account", () => {
 
 **注入的全局 API**
 
-- `client.&lt;get|post|put|del|patch|head|options>(path, opts?)` —— `opts = { headers?, body? }`，
+- `client.<get|post|put|del|patch|head|options>(path, opts?)` —— `opts = { headers?, body? }`，
   返回 `ClientResp { status, headers, body, upgrade }`。`path` 为**相对 base** 的路径，如 `/user/account`。
 - `client.login(username, password, headers?)` —— POST `/auth/login`（headers 透传给请求，
   如 `{ "X-TENANT-ID": "default" }`），返回 `access_token`。
@@ -105,7 +105,7 @@ describe("user account", () => {
 1. **多租户**：config 启用 `tenant` 后，每个请求（含 login/refresh/logout）都必须带
    `X-TENANT-ID` 头，否则 400——`client.login` 的第三个参数就是干这个的。
 2. **鉴权**：config 启用 `auth` 后，除匿名路径（`/health` 与 `anonymous_paths` 配的
-   `/auth/*`）外都要带 `Authorization: Bearer &lt;token>`，否则 401。`client.login` 仅用于拿 token。
+   `/auth/*`）外都要带 `Authorization: Bearer <token>`，否则 401。`client.login` 仅用于拿 token。
 
 > `beforeEach` 注册的是单一全局钩子，跨多个 `describe` 会被覆盖；多 describe 文件建议在各 `it`
 > 内联准备（如每个用例自己 `client.login`），避免互相干扰。
@@ -134,10 +134,20 @@ npx vitest run  # 等价于 npm test
 
 - `mocks/oj-globals.ts`：`installGlobals(opts?)` 把运行时注入的 `db/json/http/bus/log` 替换为
   可控桩，返回本次响应捕获 `{ code, msg, data }`；`lastPublished()` 取 `bus.publish` 记录，
-  `lastSqlCalls()` 取 `db.query/exec` 的 SQL + 绑定参数记录（可断言 handler 走了哪个分支）。
+  `lastSqlCalls()` 取 `db` 发出的 SQL（query/exec/**构造器**）与绑定参数记录（可断言 handler 走了哪个分支）。
+- `mocks/query-builder.ts`：`db.table(...)` 的构造器桩，**镜像** `src/bridge/bootstrap.js` 的
+  `builderFromReq` API 面（select/where/orderBy/limit/offset/insert/update/delete/returning/
+  all/run/toSQL，含 `update|delete` 无 where 即抛的守卫）。SQL 按**规范形**渲染（小写关键字、
+  `col, col`、`?` 占位）——真实渲染是 sea-query 按方言产出，mock 不复刻方言细节；保留的信号是
+  「handler 选了哪张表/哪些列/什么过滤条件/绑定参数」，故 spec 断言的是规范形而非某个方言真身。
+  未覆盖的形态（树形 or/and、子查询、join、聚合列）**直接抛错**，避免静默渲染出错误字符串。
 - `invoke.ts`：`invoke(handler, method, opts?)` 装好 mock 全局 → 调用 `handler[method]()` →
   flush 微任务 → 返回 `{ ...capture, published }`。
 - `*.spec.ts`：直接 import 真实 `../src/.../api` 的 handler，调用 `invoke` 并断言。
+- `vitest.config.ts`：把 oj 的**导入别名**（`#x` 本模块根 / `#/m/x` src 根）镜像成
+  `resolveId` 插件。L2 跑在 vite 解析器上，与 oj 运行时是两套；不镜像的话，被 spec 直接
+  import 的模块内文件一旦用了别名，vitest 会按 Node 的 `package.json#imports` 解释 `#` 并报
+  解析失败。规则与 `src/bridge/module_loader.rs::resolve_alias` 同源（含后缀探针顺序）。
 
 ### 测试文件写法
 
@@ -157,8 +167,8 @@ describe("user/account (L2 分支 + SQL)", () => {
 });
 ```
 
-> 业务 handler 内部用 `db.query(...).then(json.ok)` 走微任务，故 `invoke` 已 `setTimeout(0)` flush，
-> 断言前响应已落定。
+> 业务 handler 内部用 `db.table(...).all().then(json.ok)` / `db.query(...).then(json.ok)` 走微任务，
+> 故 `invoke` 已 `setTimeout(0)` flush，断言前响应已落定。
 
 ### 适用场景
 

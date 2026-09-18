@@ -11,7 +11,7 @@ const tokenize = (text: string) => {
 
 export default withMermaid(defineConfig({
   title: 'oj 开发者手册',
-  description: 'only-js（oj）后端运行时 + oj-module 前端框架：用 JS/TS 写业务，Rust 兜底能力，插件可插拔。',
+  description: 'oj-bin（oj）后端运行时 + oj-module 前端框架：用 JS/TS 写业务，Rust 兜底能力，插件可插拔。',
   lang: 'zh-CN',
   srcDir: 'src',
   markdown: { html: true },
@@ -34,6 +34,7 @@ export default withMermaid(defineConfig({
       { text: '首页', link: '/' },
       { text: '学习路径', link: '/guide/01-what-is-oj' },
       { text: '后端参考', link: '/reference/api-manual/' },
+      { text: '后端专题', link: '/topics/' },
       { text: '前端框架', link: '/frontend/framework-dev-guide' },
       { text: '示例实战', link: '/sample/' },
     ],
@@ -66,6 +67,74 @@ export default withMermaid(defineConfig({
         ],
       },
       {
+        text: '后端专题',
+        items: [
+          { text: '专题总览', link: '/topics/' },
+          {
+            text: 'db 专栏',
+            link: '/topics/db/',
+            collapsed: true,
+            items: [
+              {
+                text: 'db 新人手册',
+                link: '/reference/db-guide/',
+                collapsed: true,
+                items: splitNav['/reference/db-guide'],
+              },
+              { text: '数据迁移', link: '/reference/migration' },
+              { text: '06 · 数据层与迁移（学习路径）', link: '/guide/06-data-layer' },
+              { text: '07 · 模块数据层（模块地图）', link: '/modules/07-data-layer' },
+            ],
+          },
+          {
+            text: 'tenant 专栏',
+            link: '/topics/tenant/',
+            collapsed: true,
+            items: [
+              { text: '多租户新手指南', link: '/reference/tenant-guide' },
+              { text: '内置 API 与鉴权', link: '/reference/builtin-api-auth' },
+              { text: '07 · 鉴权与多租户（学习路径）', link: '/guide/07-auth-tenant' },
+            ],
+          },
+          {
+            text: 'websocket 专栏',
+            link: '/topics/websocket/',
+            collapsed: true,
+            items: [
+              { text: 'WebSocket', link: '/reference/websocket' },
+              { text: 'MQ 与长任务', link: '/reference/mq-tasks' },
+              { text: '08 · 实时与消息（学习路径）', link: '/guide/08-realtime' },
+            ],
+          },
+          {
+            text: 'oidc 专栏',
+            link: '/topics/oidc/',
+            collapsed: true,
+            items: [
+              { text: 'OIDC 接入', link: '/reference/oidc-integration' },
+              { text: 'OIDC 实现', link: '/reference/oidc-implementation' },
+              { text: 'idp 模块（内置 OP）', link: '/sample/idp' },
+              { text: 'oidc 模块（RP）', link: '/sample/oidc' },
+            ],
+          },
+          {
+            text: 'mail 专栏',
+            link: '/topics/mail-smtp/',
+            collapsed: true,
+            items: [
+              { text: '邮件投递（SMTP）', link: '/reference/mail-smtp' },
+              { text: '设计记录', link: '/reference/mail-smtp-design' },
+              {
+                text: '实施记录',
+                link: '/reference/mail-smtp-impl/',
+                collapsed: true,
+                items: splitNav['/reference/mail-smtp-impl'],
+              },
+            ],
+          },
+        ],
+      },
+      {
         text: '后端 · API 参考',
         items: [
           {
@@ -75,14 +144,8 @@ export default withMermaid(defineConfig({
             items: splitNav['/reference/api-manual'],
           },
           { text: 'bridge 与全局对象', link: '/reference/bridge' },
-          { text: 'WebSocket', link: '/reference/websocket' },
-          { text: 'MQ 与长任务', link: '/reference/mq-tasks' },
-          { text: '数据迁移', link: '/reference/migration' },
           { text: '测试手册', link: '/reference/testing' },
-          { text: 'OIDC 接入', link: '/reference/oidc-integration' },
-          { text: 'OIDC 实现', link: '/reference/oidc-implementation' },
           { text: '插件开发', link: '/reference/plugin-development' },
-          { text: '内置 API 与鉴权', link: '/reference/builtin-api-auth' },
           { text: '基准测试', link: '/reference/benchmarks' },
         ],
       },
@@ -100,12 +163,6 @@ export default withMermaid(defineConfig({
             link: '/reference/user-manual/',
             collapsed: true,
             items: splitNav['/reference/user-manual'],
-          },
-          {
-            text: 'db 新人手册',
-            link: '/reference/db-guide/',
-            collapsed: true,
-            items: splitNav['/reference/db-guide'],
           },
           { text: '运维手册', link: '/reference/ops-manual' },
           { text: 'oj 开发 skill', link: '/reference/devkit-skill' },
@@ -185,11 +242,11 @@ export default withMermaid(defineConfig({
       },
     ],
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/everpan/only-js' },
+      { icon: 'github', link: 'https://github.com/everpan/oj-bin' },
       { icon: 'github', link: 'https://github.com/everpan/oj-module' },
     ],
     footer: {
-      message: '内容由 scripts/sync-docs.mjs 从 only-js / oj-module 同步生成',
+      message: '内容由 scripts/sync-docs.mjs 从 oj-bin / oj-module 同步生成',
     },
   },
 }));

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:sample/src/idp/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:sample/src/idp/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: idp 模块（内置 OP）
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:sample/src/idp/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:sample/src/idp/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # idp 模块（内置 OP，OIDC Provider）
@@ -39,7 +39,7 @@ generated: 2026-09-12
 
 ## 怎么改
 
-- **加 client**：只改 `config.yaml` 的 `oidc.clients.&lt;id>`（secret/redirect_uris/tenant），
+- **加 client**：只改 `config.yaml` 的 `oidc.clients.<id>`（secret/redirect_uris/tenant），
   不动代码。
 - **换用户源**（手机号/ldap/三方）：只改 `login/api.ts` 的取数与校验段；OP 不做 JIT——
   本地账号映射归 RP（见 `../oidc/README.md`）。

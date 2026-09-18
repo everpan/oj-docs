@@ -10,3 +10,26 @@
 .gen-note::before {
   content: "🛈 ";
 }
+
+/* ICP 备案号（theme/Layout.vue 的 layout-bottom 插槽）：全站页脚。
+   默认主题的 .VPFooter 在带侧边栏的页面被 display:none 隐藏，这里不复用。 */
+.IcpFooter {
+  border-top: 1px solid var(--vp-c-gutter);
+  padding: 16px 24px;
+  background-color: var(--vp-c-bg);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--vp-c-text-2);
+}
+
+.IcpFooter a {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+  transition: color 0.25s;
+}
+
+.IcpFooter a:hover {
+  color: var(--vp-c-text-1);
+}

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: bridge 与全局对象
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # bridge —— deno_core JS SDK 桥接模块
@@ -59,8 +59,9 @@ json.raw(data)             // 裸 JSON 200（无信封外壳），标准协议�
 ### db / DB(name) —— 数据访问（Promise）
 
 ```js
-// 原始 SQL + 绑定参数（参数防注入，推荐）。
-const rows = await db.query("select * from user where id = $1", [1]); // Row[]（JSON 对象数组）
+// 安全构造器 + 绑定参数（值参数化，标识符走白名单，推荐）。
+const rows = await db.table("user").where({ field: "id", op: "eq", value: 1 }).all(); // Row[]（JSON 对象数组）
+// 构造器不覆盖的语句才退回原生参数化执行：
 const n = await db.exec("update user set age = $1 where id = $2", [19, 1]); // 受影响行数
 
 // 安全查询构造器（标识符白名单 + 值参数化，强烈推荐）。
@@ -150,7 +151,7 @@ finish(); // 等价于 json.ok/fail 的 SignalDone 语义，但不写响应
 ### ext_boot.js —— 上面各全局的运行时补充
 
 上表全局由 `bootstrap.js` 编译期装配（改它要重编二进制）。`ext_boot.js` 是运行时补充：
-`&lt;config_dir>/ext_boot.js` 存在即被每个**新建**的 JsRuntime 加载执行一次（ESM，支持顶层
+`<config_dir>/ext_boot.js` 存在即被每个**新建**的 JsRuntime 加载执行一次（ESM，支持顶层
 `await` 与 import 项目内模块），可在已有全局上做组合增补。
 
 ```js
@@ -227,8 +228,8 @@ pub trait KVStore: Send + Sync {                   // 后续真实 Redis 以同�
 }
 ```
 
-`BridgeResult&lt;T> = Result&lt;T, Box&lt;dyn Error + Send + Sync>>`，op 层转为 `JsErrorBox` 抛给 JS。
-`SqlxAccessor`（accessor_sqlx.rs）已实现 `DataAccessor`，以 `Pool&lt;Any>` 驱动无关接入真实 MySQL/PG/SQLite。
+`BridgeResult<T> = Result<T, Box<dyn Error + Send + Sync>>`，op 层转为 `JsErrorBox` 抛给 JS。
+`SqlxAccessor`（accessor_sqlx.rs）已实现 `DataAccessor`，以 `Pool<Any>` 驱动无关接入真实 MySQL/PG/SQLite。
 
 ## 测试与性能
 
@@ -244,6 +245,6 @@ json.ok 230 ns，db.query 413 ns，fetch 本地回环复用连接 30 µs/req（3
 ## deno_core 0.410 移植要点
 
 - `#[op2]` 无 `(async)` 标志，`async fn` 自动识别。
-- `#[serde]` 位置须写全限定 `serde_json::Value`；`Option&lt;String>` 参数用 `#[string]`。
-- 扩展 JS 必须 7-bit ASCII；`esm_entry_point` specifier 为 `ext:<扩展宏名>/&lt;file>`。
-- 同步 op 第一参 `&mut OpState`，异步 op 第一参 `Rc&lt;RefCell&lt;OpState>>`。
+- `#[serde]` 位置须写全限定 `serde_json::Value`；`Option<String>` 参数用 `#[string]`。
+- 扩展 JS 必须 7-bit ASCII；`esm_entry_point` specifier 为 `ext:<扩展宏名>/<file>`。
+- 同步 op 第一参 `&mut OpState`，异步 op 第一参 `Rc<RefCell<OpState>>`。

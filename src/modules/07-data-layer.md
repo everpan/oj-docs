@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/07-data-layer.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/07-data-layer.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 07 · 模块数据层
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/07-data-layer.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/07-data-layer.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 07 · 模块数据层（`oj/src/{manifest,schema,migrate,seed,checks}.rs`）
@@ -35,7 +35,7 @@ db: default         # 可选：模块的 "default" 库重定向到该命名库
 | `load_lock`（:57） | `dist/manifests.yaml`（模块 → 锁定版本）。**缺失 = 空表（首次构建合法）；坏锁 = Err**（不得被当空表静默重置） |
 | `save_lock`（:67） | 原子写（tmp + rename）。⚠️ 多进程并发构建的读-改-写竞争不做锁（已知 ceiling） |
 | `load_modules`（:78） | 首层全部模块 + `name == 目录名` 校验 |
-| `discover`（:113） | dev = 首层子目录；release = 锁 `{m: v}` → `&lt;dir>/&lt;m>-&lt;v>/`。返回按模块名排序 |
+| `discover`（:113） | dev = 首层子目录；release = 锁 `{m: v}` → `<dir>/<m>-<v>/`。返回按模块名排序 |
 
 ## 2. `schema.rs` —— 声明式表结构（§4.2 / D1=C）
 
@@ -54,7 +54,7 @@ db: default         # 可选：模块的 "default" 库重定向到该命名库
 
 ## 3. `migrate.rs` —— 迁移引擎（spec §11.2，D4）
 
-基于 **refinery-core**：`OjConn` 把 `Arc&lt;dyn DataAccessor>` 包进
+基于 **refinery-core**：`OjConn` 把 `Arc<dyn DataAccessor>` 包进
 `AsyncTransaction` / `AsyncQuery`；契约只吃 SQL 字符串，跨得过 DataAccessor 边界。
 
 - **账本**：单表 `_oj_migrations`（module 列 + 复合主键 (module, version)），version 模块内从 1 起。
@@ -97,6 +97,7 @@ db: default         # 可选：模块的 "default" 库重定向到该命名库
 | S003 | 模块 SQL 引用他模块表但未声明 `deps` | `checks::run`（:70 起），附 §3-D2 场景决策表 |
 | S005 | `manifest.tables` 与 `schema.yaml` 双向一致 | `checks::run`（:49） |
 | S007 | 迁移文件 seq 连续性 / 命名 / 方言覆盖 | `migrate::load_migrations` |
+| S008 | 导入别名（`#x` 本模块根 / `#/m/x` src 根）：目标必须存在；跨模块别名必须在 `deps` 声明；`manifest.yaml` 只许在模块根；项目 `package.json` 的 `#` 键 `imports` 与别名命名空间冲突即 fail | `checks::run`（项目级 + 逐模块），扫描器与构建共用 `bridge::import_scan` |
 
 - 报错三要素（硬性要求）：**违规文件路径（+规则 ID）、原因（引用具体声明）、下一步动作**。
 - SQL 表名提取与运行时守卫**同一实现**（`bridge::guard::extract_tables`，§5.3 轻量扫描口径）。

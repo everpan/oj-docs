@@ -25,7 +25,7 @@ VitePress 的页面必须落在 `srcDir`（这里是 `src/`）里。让站点直
    `<p class="gen-note">generated: <日期> · 本页由脚本从 <仓库>:<源> 同步生成…</p>`，
    改源文件后重跑 `pnpm run sync` 即可。
 3. **产物入库、站点自包含**：生成页与 sidebar 数据提交进仓库，克隆即可 build，
-   **不依赖源仓库**——sync 在 `../only-js` / `../oj-module` 缺席时自动跳过（沿用已提交
+   **不依赖源仓库**——sync 在 `../oj-bin` / `../oj-module` 缺席时自动跳过（沿用已提交
    的产物；守卫必须先于任何写入，否则空跑会写出空 sidebar 数据弄坏站点）。压漂移靠
    流程：改源文档后跑 `pnpm run sync`，提交前跑 `pnpm run verify`，把再生成页面随
    源变更一起提交（注意生成页带日期，sync 后 git diff 会显示日期变化，属正常）。
@@ -34,10 +34,10 @@ VitePress 的页面必须落在 `srcDir`（这里是 `src/`）里。让站点直
 
 | 源 | 仓库 | 取哪些 |
 |---|---|---|
-| backend（默认） | `../only-js` | `docs/`、`docs/devkit/`、`docs/modules/`、`sample/` |
+| backend（默认） | `../oj-bin` | `docs/`、`docs/devkit/`、`docs/modules/`、`sample/` |
 | frontend | `../oj-module` | `docs/prd/`（现行手册与设计稿；个别现行文档取自 `docs/archive/prd/`） |
 
-条目用 `from` 字段选源；生成页 banner 带 `only-js:` / `oj-module:` 前缀标明出处。
+条目用 `from` 字段选源；生成页 banner 带 `oj-bin:` / `oj-module:` 前缀标明出处。
 两个仓库的 `docs/archive/`、`docs/superpowers/` 都是历史文档，指向它们的链接统一改写到
 `/appendix/history-index`（被收录的除外，路由表优先命中）。
 
@@ -87,7 +87,9 @@ VitePress 的页面必须落在 `srcDir`（这里是 `src/`）里。让站点直
 | 代码块语言 `cli` / `bat` / `cmd` / `sh` → `bash` | shiki 不认 `cli`，会掉高亮 |
 | 站内相对链接（含 `./xxx.md`）→ 站点绝对路径 | 文档搬到 `src/` 后相对层级全变了；切页后子页目录更深，相对基准必然失效 |
 | wikilink `[[slug]]` / `[[slug|文本]]` → 站内链接 | 前端文档用 Obsidian 风格互链；按文件名映射到路由，解不出的退化成纯文本（代码块内不动） |
-| 正文里 `<config_dir>` / `Promise<T>` 的 `<` → `&lt;`（代码块外） | md 会被当 Vue 模板编译，裸标签 = 未闭合元素，build 直接失败 |
+| 正文里 `<config_dir>` / `Promise<T>` 的 `<` → `&lt;` | md 会被当 Vue 模板编译，裸标签 = 未闭合元素，build 直接失败 |
+| 代码（围栏块 + 行内代码）里的 `<` 不转义 | markdown-it 自己会转义；脚本再转一次就成 `&amp;lt;`，页面显示成 `&lt;`（曾线上 380 处） |
+| 白名单标签需正文里有成对 `</tag>` 才算真 HTML | 否则 `<a>` 这种占位符会被当未闭合元素，build 直接失败 |
 | 注入 frontmatter `title` / `generated` | 页面标题与生成日期；源文档自带 frontmatter 时做**合并**不覆盖 |
 
 ### 链接映射怎么工作
@@ -121,7 +123,7 @@ VitePress 自带的死链检测只覆盖它渲染出的链接，且不校验被�
 
 | 报错 | 处理 |
 |---|---|
-| `Element is missing end tag` | 有裸 `<...>` 逃过了转义：确认它在代码块内/外，必要时把标签名加进 `HTML_OK` 白名单 |
+| `Element is missing end tag` | 有裸 `<...>` 逃过了转义：它一定在正文里（行内代码与围栏块都不转义），且要么不在 `HTML_OK`，要么是白名单标签但正文里没有成对的 `</tag>`；给源文档的占位符补上反引号是首选修法，其次才考虑加白名单 |
 | `Found dead link /reference/xxx` | 该文档被切页了，链接要带尾斜杠；或在 `ENTRIES` 补映射 |
 | `Found dead link http://localhost:...` | 示例命令里的本地地址，config 的 `ignoreDeadLinks` 已放行 |
 | `[sync] 缺失：<src>` | `ENTRIES` 里的源路径写错或文件已删除 |

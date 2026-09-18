@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `oj-module:docs/prd/202609111926-vendor-npm-install-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-module:docs/prd/202609111926-vendor-npm-install-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: vendor npm 改造
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 oj-module:docs/prd/202609111926-vendor-npm-install-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-module:docs/prd/202609111926-vendor-npm-install-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # ojm vendor 改造：下载源从 GitHub releases 切换为 npm 包 @oj-bin/oj
@@ -22,7 +22,7 @@ generated: 2026-09-12
 
 上游包行为（实测 0.1.13 postinstall.js）：
 
-- 以 `INIT_CWD`（调 npm 时的 cwd）为落盘根，拷 `oj`/`oj.exe` + `plugins/` + `devkit/` 到 `&lt;cwd>/bin/`，文件级原子替换 + chmod 755；
+- 以 `INIT_CWD`（调 npm 时的 cwd）为落盘根，拷 `oj`/`oj.exe` + `plugins/` + `devkit/` 到 `<cwd>/bin/`，文件级原子替换 + chmod 755；
 - **所有「装不上」路径只打 WARN 并 exit 0**（绝不炸掉 npm i）→ 安装后必须自行验证 `bin/oj` 存在；
 - 不写 `.oj-version` 标记 → 由 cli 侧写；
 - 平台面：`linux-x64` / `darwin-arm64` / `win32-x64`（darwin-x64、linux-arm64 暂无，缺失时 postinstall WARN 明示）；
@@ -32,7 +32,7 @@ generated: 2026-09-12
 
 | # | 决策点 | 结论 | 理由 |
 |---|--------|------|------|
-| N1 | 下载通道 | 壳出 `npm i --no-save --no-package-lock --no-audit --no-fund @oj-bin/oj@&lt;version>` | 用户指定；平台选择/完整性/镜像全交给 npm |
+| N1 | 下载通道 | 壳出 `npm i --no-save --no-package-lock --no-audit --no-fund @oj-bin/oj@<version>` | 用户指定；平台选择/完整性/镜像全交给 npm |
 | N2 | 安装目录 | **临时目录**安装，再 `fs.cpSync` 临时目录 `bin/` → 工程 `bin/` | 避免在用户工程留 node_modules/package-lock 副作用（用户工程可能是 pnpm 项目） |
 | N3 | 版本解析 | tag 缺省：`npm view @oj-bin/oj version`（跟随用户 registry/镜像配置）；显式 tag 去 `v` 前缀后直接使用 | 镜像友好（解决 GitHub 直连受限）；parseVendorArgs 的 v 前缀规范化不动 |
 | N4 | 完整性校验 | 删除自管 `.sha256` 流程，由 npm dist.integrity（sha512）承担 | npm 原生能力，不重复造 |

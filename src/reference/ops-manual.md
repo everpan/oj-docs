@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/ops-manual.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/ops-manual.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 运维手册
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/ops-manual.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/ops-manual.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj server 运维手册
@@ -25,9 +25,9 @@ ls -lh target/release/oj          # 独立二进制，无运行时依赖（deno_
 发布流程：
 1. `cargo build --release`（确认 debug/release 双绿）。
 2. `oj build -d src -o dist`（无参 = 全部模块）——生成各模块版本目录
-   `dist/&lt;module>-&lt;version>/`（产物保留 src 目录结构与原名，如 `account/api.js`，
+   `dist/<module>-<version>/`（产物保留 src 目录结构与原名，如 `account/api.js`，
    默认 minify 成单行）、锁文件 `dist/manifests.yaml` 与确定性发布包
-   `dist/&lt;module>-&lt;version>.tgz`（同输入重复打包字节一致，可校验完整性）。
+   `dist/<module>-<version>.tgz`（同输入重复打包字节一致，可校验完整性）。
    排障需要可读产物时加 `--no-minify` 重建。CI 可在构建前跑 `oj build --check`
    （只跑结构检查 S002–S006 不落盘，违规 exit 1）。
 3. `oj migrate -c config.yaml -d dist`——应用各模块 `migrations/*.sql` 并按 `schema.yaml`
@@ -40,14 +40,14 @@ ls -lh target/release/oj          # 独立二进制，无运行时依赖（deno_
 ### 1.1 npm 分发（`@oj-bin/*`）
 
 除 Release 归档外，另有一条 npm 渠道：`npm i @oj-bin/oj` 由 postinstall 把二进制落到
-用户项目 `./bin/`（`bin/oj`、`bin/plugins/&lt;triple>/`、`bin/devkit/`）。
+用户项目 `./bin/`（`bin/oj`、`bin/plugins/<triple>/`、`bin/devkit/`）。
 
 **模板位置**（仅声明，不含发布逻辑）：
 
 | 路径 | 内容 |
 |---|---|
 | `npm/oj/` | 主包 `@oj-bin/oj` 模板（`__VERSION__` 占位 + 3 个平台 optionalDependencies）+ `postinstall.js` + `test/postinstall.test.js` |
-| `npm/platform/` | 平台子包 `@oj-bin/oj-&lt;triple>` 模板（`__TRIPLE__`/`__OS__`/`__CPU__`；**禁止加 `exports` 字段**，见包内注释） |
+| `npm/platform/` | 平台子包 `@oj-bin/oj-<triple>` 模板（`__TRIPLE__`/`__OS__`/`__CPU__`；**禁止加 `exports` 字段**，见包内注释） |
 | `npm/README.md` | 两类包共用 README（发布时拷入包根） |
 
 发布逻辑的单一真相来源是 `scripts/npm-publish.sh`——CI（`release.yml` 的 `publish-npm`
@@ -69,7 +69,7 @@ bash scripts/npm-publish.sh v0.1.13             # 真发（幂等，已发布的
 1. **版本一致性**——tag（去 `v`）必须等于 `oj/Cargo.toml` 的 version。
 2. **triple 校验**——未知 triple、同 `(os,cpu)` 撞车直接报错。
 3. **先子包后主包**——平台包逐个 publish，任一失败即退出，绝不发主包；装配时断言包根
-   有 `oj[.exe]`、`plugins/&lt;triple>/`、`devkit/api-manual.md`。
+   有 `oj[.exe]`、`plugins/<triple>/`、`devkit/api-manual.md`。
 4. **发布后置信**——`npm view` 断言 os/cpu，下载 tarball 断言文件清单。
 
 三点注意：
@@ -129,7 +129,7 @@ kill 12345                       # 停机：SIGTERM 走优雅停机（排空在�
   **准入门（三态，无静默默认）**：api（`--api-path`）与静态（`server.app_path` / `--app-path`）至少显式指定其一，否则退出；
   两者皆指定 → 都必须存在，任一缺失退出；仅指定其一 → 只启用对应功能（api 缺席 = 纯静态模式，两者皆未指定 = 退出）。
   静态站点前缀 `server.app_prefix`（默认 `/`）：设为如 `/site` 时仅 `/site/*` 的 GET/HEAD 落静态（前缀剥除后解析），前缀外 404；API 路由永远优先。
-- **DB** `db.&lt;name> = "&lt;DSN>"`：相对 config **所在目录**（`config_dir_of` 保证非空）。
+- **DB** `db.<name> = "<DSN>"`：相对 config **所在目录**（`config_dir_of` 保证非空）。
   v0.2 多库混用：`sqlite://`（缺文件自动建空库）/`mysql://`/`postgres://`（透传，连不上启动
   fail-fast）。`sqlite::memory:` 仅测试用，重启即丢。**seed.sql 只对 sqlite 的 default 重放**，
   mysql/pg 的建库/迁移归运维。
@@ -177,7 +177,7 @@ kill 12345                       # 停机：SIGTERM 走优雅停机（排空在�
   （notify 事件驱动，不轮询 mtime），原子更新证书状态（valid ↔ grace ↔ expired）；重载失败
   保留旧状态并记 `warn`。这与 `config.yaml` 不同——证书轮换**无需重启**。
 - **`ext_boot.js`（可选）**：**不热重载**，改动后必须重启进程。装配期冻结
-  `file://…?v=&lt;mtime>` 并打印 `ext_boot: loaded <绝对路径> (&lt;spec>)`，这行日志是核对
+  `file://…?v=<mtime>` 并打印 `ext_boot: loaded <绝对路径> (<spec>)`，这行日志是核对
   「跑的是不是改过的那份」的唯一依据（池常驻，运行期新建的 runtime 才会重新读盘，
   故改文件不重启会出现池内新旧混杂）。
 - **不触发热重载**：`config.yaml`（重启生效）、`ext_boot.js`（重启生效，见上）、`seed.sql`
@@ -207,7 +207,7 @@ RUST_LOG=oj=info ./oj server -c config.yaml --api-path dist
 |---|---|---|
 | 启动即报「missing manifest.yaml」 | 某首层子目录缺 `manifest.yaml`，或残留空目录 | 补齐；删除空目录（空目录不参与 git，但 `read_dir` 会扫到） |
 | 启动报「manifest name mismatch」 | `manifest.yaml` 的 `name` ≠ 父目录名 | 对齐 |
-| 启动报 `manifests.yaml … run oj build first` | release 下锁文件缺失/损坏，或指向不存在的版本目录 | 跑 `oj build &lt;module>`；锁被手工改坏时按报错修 |
+| 启动报 `manifests.yaml … run oj build first` | release 下锁文件缺失/损坏，或指向不存在的版本目录 | 跑 `oj build <module>`；锁被手工改坏时按报错修 |
 | 启动报「version dir collision」 | 两个 (module, version) 组合拼出同一目录名（如 `a`/`1-x` 与 `a-1`/`x`） | 改 version 命名避开 |
 | 404 | 路由无对应 `api.ts/js`，或目录穿越/非法段 | 核对路径与 `-b` 前缀；release 先确认模块在锁内 |
 | 启动报 `server.app_path …` | 静态根目录不存在（config 配置相对 config 目录解析；CLI `--app-path` 相对 CWD） | 建目录或改路径；不配 `app_path` 且不给 `--app-path` 即关闭静态服务 |
@@ -252,10 +252,10 @@ RUST_LOG=oj=info ./oj server -c config.yaml --api-path dist
 | GET 全部 403 `certificate expired` | 运行中证书被热加载切到 grace / expired（或启动即处该状态） | 替换证书文件（热加载即时生效）；查 `GET {base}/health` 的 `certificate_status` |
 | `oidc not configured` 报错 | JS 调 `oidc.*` 但 config 无 `oidc:` 段（或缺私钥路径未通过启动校验） | 加 `oidc:` 段（`issuer` + `private_key_path`），见 `docs/oidc-integration.md` |
 | 启动报 `oidc: issuer must not be empty` / `parse pkcs8 pem` | `oidc:` 段存在但 issuer/私钥路径为空，或私钥不是 PKCS#8 PEM（fail-fast） | 补 issuer；用 `openssl genpkey -algorithm RSA …` 或 `oj-cert gen` 重新生成私钥 |
-| `/oidc/login` → 502 `discovery failed` | `oidc.rp.&lt;tenant>.issuer` 不可达 / 无 discovery 端点 /  issuer 写错 | `curl &lt;issuer>/.well-known/openid-configuration` 自查；网络/代理核对 |
+| `/oidc/login` → 502 `discovery failed` | `oidc.rp.<tenant>.issuer` 不可达 / 无 discovery 端点 /  issuer 写错 | `curl <issuer>/.well-known/openid-configuration` 自查；网络/代理核对 |
 | `/oidc/callback` → 401 `invalid or expired state` | state 已消费（一次一用）或超 10 分钟，或 KV 多实例不共享 | 从 `/oidc/login` 重新起流程；多实例部署必须配共享 KV（Redis） |
 | `/oidc/callback` → 401 `id_token verification failed` / `claims mismatch` | IdP 轮换密钥（kid 不匹配）、token 被篡改，或 nonce/iss/aud 与快照不符 | 核对 issuer 逐字一致；重登；确认 IdP 签名算法为 RS256 |
-| authorize → 400 `redirect_uri not registered` | 跳转地址不在 `oidc.clients.&lt;id>.redirect_uris` 精确白名单 | 白名单为精确串匹配（scheme/host/端口/路径全同），补注册或改地址 |
+| authorize → 400 `redirect_uri not registered` | 跳转地址不在 `oidc.clients.<id>.redirect_uris` 精确白名单 | 白名单为精确串匹配（scheme/host/端口/路径全同），补注册或改地址 |
 | OP 登录后 `/idp/authorize` 仍 401 `login required` | `IDP_SESSION` cookie 未带上（跨域丢失/过期/Path 不符）或 OP 会话 KV 过期 | 带 cookie 重试（curl `-b`）；会话 TTL 取 `auth.refresh_token_duration` |
 | 启动报 `invalid public key` / `signature verification failed` | 公钥 PEM 非法，或 JWS 签名与公钥不匹配 | 核对密钥对一致、签名算法为 RS256；用同一私钥重签 JWS |
 | 启动报 `invalid JWS format` | `certificate.jws` 不是三段 `Base64URL(Header).Payload.Signature` | 按 `Header.Payload.Signature` 重新生成 JWS |

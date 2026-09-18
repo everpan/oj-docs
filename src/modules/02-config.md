@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-12 从 `only-js:docs/modules/02-config.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/02-config.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 02 · 配置模型
-generated: 2026-09-12
+generated: 2026-09-18
 ---
 
-<p class="gen-note">generated: 2026-09-12 · 本页由脚本从 only-js:docs/modules/02-config.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/02-config.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 02 · 配置模型（`src/config.rs`）
@@ -13,7 +13,7 @@ generated: 2026-09-12
 ## 1. 治理原则
 
 **块存在即启用，块缺失即禁用。** 全文件单源（`config.yaml`），无 env 叠加。
-`Option&lt;T>` 的 `None` = 能力不装配（对应全局/路由/守卫都不挂）。
+`Option<T>` 的 `None` = 能力不装配（对应全局/路由/守卫都不挂）。
 
 加载：`config::load_from(dir, explicit)`（`config.rs:322`）
 - `explicit = Some(p)` → 文件不存在即 **Err**；
@@ -33,7 +33,7 @@ generated: 2026-09-12
 | `timeout` | `"30s"` | 单请求执行超时，超时 → 408 |
 | `pool_size` | `4` | JS 执行并发度（= actor 数） |
 | `max_upload_bytes` | `10 MiB` | 超出 → 信封 413；axum 层 2x 硬顶（裸 413） |
-| `logs_dir` | `None` → `&lt;config>/logs` | 每次启动一个 `server-<秒>_&lt;pid>.log` |
+| `logs_dir` | `None` → `<config>/logs` | 每次启动一个 `server-<秒>_<pid>.log` |
 | `logs_max_m` / `logs_keep_files` | `100` / `10` | 单文件上限（<100 按 100）/ 保留个数（最小 2） |
 | `console_log` | `false` | 默认只落盘，终端保持干净；`--console-log` 打开。启动失败的最终退出原因无论开关都直写终端（`echo_terminal`） |
 | `public_key_path` / `certificate_path` | `""` | **证书必配**，两路径缺任一 → 装配拒绝启动 |
@@ -45,16 +45,16 @@ generated: 2026-09-12
 
 | 段 | 类型 | 语义 |
 |---|---|---|
-| `db` | `HashMap&lt;name, DSN>` | 多库混用（`sqlite://` / `mysql://` / `postgres://`），经 `DbBackendRegistry` 按 scheme 认领 |
-| `redis` | `HashMap&lt;name, URL>` | 仅 `redis.default` 参与装配（其余 warn 忽略）；有声明但无 kv 插件 → fail fast；未声明 → 内置 `InMemoryKV` |
+| `db` | `HashMap<name, DSN>` | 多库混用（`sqlite://` / `mysql://` / `postgres://`），经 `DbBackendRegistry` 按 scheme 认领 |
+| `redis` | `HashMap<name, URL>` | 仅 `redis.default` 参与装配（其余 warn 忽略）；有声明但无 kv 插件 → fail fast；未声明 → 内置 `InMemoryKV` |
 | `tenant` | `TenantCfg` | `enable` + `header_key`（默认 `X-TENANT-ID`）+ `anonymous_paths`（尾 `/*` 一层通配） |
 | `auth` | `AuthCfg` | `jwt_secret`（空 → fail fast）、`signing_method`(HS256/384/512)、access/refresh 时长、`anonymous_paths` |
 | `oidc` | `OidcSection` | `issuer` / `private_key_path`（相对 config 目录）/ `rp: {tenant → {issuer, client_id, client_secret, scope}}` / `clients: {id → {secret, redirect_uris, tenant}}` |
-| `blob` | `BlobSection` | 平铺字段 = 旧单后端（等价 `backends.default`）；`backends.&lt;name>` = 命名多后端；**两者并存且平铺非默认 → 歧义 Err** |
+| `blob` | `BlobSection` | 平铺字段 = 旧单后端（等价 `backends.default`）；`backends.<name>` = 命名多后端；**两者并存且平铺非默认 → 歧义 Err** |
 | `es` | `EsCfg` | `endpoint` |
 | `broker` | `BrokerCfg` | `kind`: local/kafka/rabbitmq；`brokers` / `url` / `group` / `topic_prefix` |
-| `plugins` | `HashMap&lt;name, cfg>` | **一段三用**：键 = 严格清单（非空 map 只装配列出的）/ 值 = 透传 cfg（非空对象原样透传，空对象回落轴适配器）/ 缺省或空 map = 扫描模式。旧 list 写法解析报错 |
-| `plugins_dir` | `Option&lt;PathBuf>` | 相对 config_dir；`None` 走四级后备（见 [05](/modules/05-ffi-and-plugins)） |
+| `plugins` | `HashMap<name, cfg>` | **一段三用**：键 = 严格清单（非空 map 只装配列出的）/ 值 = 透传 cfg（非空对象原样透传，空对象回落轴适配器）/ 缺省或空 map = 扫描模式。旧 list 写法解析报错 |
+| `plugins_dir` | `Option<PathBuf>` | 相对 config_dir；`None` 走四级后备（见 [05](/modules/05-ffi-and-plugins)） |
 
 ## 3. 时长解析
 
@@ -78,7 +78,7 @@ generated: 2026-09-12
 - ~~默认端口 778 与文档不一致~~ —— 已于 2026-09-06 整改：默认改为 `9778`
   （`config.rs` 默认值单测 `defaults_when_no_file` 钉死）。
 - `Config` 无 `boot` 字段：`StableState.boot` 来自 `oj/src/app.rs:67` 的
-  `ext_boot_spec()`（探测 `&lt;config_dir>/ext_boot.js`），与 config 解耦。
+  `ext_boot_spec()`（探测 `<config_dir>/ext_boot.js`），与 config 解耦。
 - `BlobCfg` 与 `BlobSection` 字段重复（`BlobSection` 内嵌一份平铺 + `backends`），
   是为兼容旧格式；新增字段需两处同步。
 - 本文件近半是单元测试（`config.rs:360-661`），覆盖了默认值、证书门禁、blob 歧义等，质量好。

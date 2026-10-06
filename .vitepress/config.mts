@@ -145,8 +145,32 @@ export default withMermaid(defineConfig({
           },
           { text: 'bridge 与全局对象', link: '/reference/bridge' },
           { text: '测试手册', link: '/reference/testing' },
-          { text: '插件开发', link: '/reference/plugin-development' },
           { text: '基准测试', link: '/reference/benchmarks' },
+        ],
+      },
+      {
+        text: '后端 · 插件',
+        items: [
+          { text: '插件索引', link: '/reference/plugins' },
+          { text: '插件机制（架构）', link: '/reference/plugins/plugin-architecture' },
+          { text: '插件开发', link: '/reference/plugins/plugin-development' },
+          { text: 'LDAP 接入', link: '/reference/ldap-integration' },
+          {
+            text: '第一方插件状态',
+            collapsed: true,
+            items: [
+              { text: 'oj-auth', link: '/reference/plugins/oj-auth' },
+              { text: 'oj-blob-s3', link: '/reference/plugins/oj-blob-s3' },
+              { text: 'oj-bus-kafka', link: '/reference/plugins/oj-bus-kafka' },
+              { text: 'oj-bus-rabbitmq', link: '/reference/plugins/oj-bus-rabbitmq' },
+              { text: 'oj-db-mysql', link: '/reference/plugins/oj-db-mysql' },
+              { text: 'oj-db-postgres', link: '/reference/plugins/oj-db-postgres' },
+              { text: 'oj-es', link: '/reference/plugins/oj-es' },
+              { text: 'oj-kv-redis', link: '/reference/plugins/oj-kv-redis' },
+              { text: 'oj-ldap', link: '/reference/plugins/oj-ldap' },
+              { text: 'oj-mail', link: '/reference/plugins/oj-mail' },
+            ],
+          },
         ],
       },
       {

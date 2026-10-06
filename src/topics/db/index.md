@@ -9,6 +9,7 @@ updated: 2026-09-14
 
 | 文档 | 看它解决什么 |
 |---|---|
+| [oj-db-mysql / oj-db-postgres 插件](/reference/plugins/oj-db-mysql) | 第一方 db 轴插件：认领 `mysql://` / `postgres://`，后端轴、配置段与构建注意、当前状态 |
 | [db 新人手册](/reference/db-guide/) | 配置 + JS 全量数据访问：查询构造器、事务、join、DML、序列化、红线 |
 | [数据迁移](/reference/migration) | 初始化与迁移两条通道、场景速查、错误码与回滚 |
 | [06 · 数据层与迁移](/guide/06-data-layer) | 学习路径版：四个数据通道、schema.yaml、账本门禁、表归属 |

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:sample/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:sample/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: sample 项目
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:sample/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:sample/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj sample — user/order/file
@@ -13,14 +13,15 @@ generated: 2026-09-18
 > 各模块导览（初学者按序学习 oj 特性）见 [MODULES.md](/sample/modules-tour)。
 
   cargo xtask build                                                            # 先产出 bin/oj + bin/plugins/&lt;triple>/（release）
-  ./bin/oj server -c sample/config.yaml --api-path sample/src                  # dev（TS，热重载；启动自动迁移）
+  ./bin/oj serve -c sample/config.yaml --api-path sample/src                  # dev（TS，热重载；启动自动迁移）
   curl http://localhost:9778/v1/api/user/account/?id=1
+  curl http://localhost:9778/v1/api/user/42                       # `_name_` 目录段即路径参数（src/user/_id_/）
 
   ./bin/oj build -d sample/src -o sample/dist                      # 构建（版本目录+migrations+锁+tgz）
   ./bin/oj build --check -d sample/src                             # 结构检查（S002–S006，CI 门禁，不落盘）
   ./bin/oj migrate -c sample/config.yaml -d sample/dist            # release 部署先迁移（verify 门禁要求）
   ./bin/oj schema diff -c sample/config.yaml                       # 声明 vs 实库对账（漂移 exit 1）
-  ./bin/oj server -c sample/config.yaml --api-path sample/dist     # release（按锁聚合；账本落后拒启）
+  ./bin/oj serve -c sample/config.yaml --api-path sample/dist     # release（按锁聚合；账本落后拒启）
 
 - 路由 = 目录镜像：src/user/profile/detail/api.ts → /v1/api/user/profile/detail/
 - 声明式表结构：每模块 `schema.yaml`（§4.2）声明表/列/索引 → 归属图（表→模块单射，
@@ -32,7 +33,7 @@ generated: 2026-09-18
   `server.ownership_guard: warn`（默认，仅告警）| `deny`（违规拒绝执行）
 - 迁移：每模块 `migrations/{seq:04}__{desc}[.方言].sql`（DDL 演进，账本
   `_oj_migrations（module 列区分模块）`）；`seed.sql` 为幂等参考数据随启动重放；
-  `fixtures/` 仅 `oj test` / `oj fixture` 灌入。`server.migrate_on_start`：
+  `fixtures/` 仅 `oj test` / `oj test fixture` 灌入。`server.migrate_on_start`：
   auto（dev 默认）| verify（release 默认，账本落后拒启）| off
 - WS 订阅发布示例：连 /v1/api/news/ws 发任意一帧（src/news/ws.ts 订阅 news），
   再 POST /v1/api/news → 连接收到 {"topic":"news",…} 广播帧
@@ -49,7 +50,7 @@ generated: 2026-09-18
 
 ## OIDC 演示（src/idp = 同进程 OP，src/oidc = RP）
 
-  ./bin/oj server -c sample/config.yaml --api-path sample/src      # 插件在 bin/plugins 自动发现，无需 OJ_PLUGINS_DIR
+  ./bin/oj serve -c sample/config.yaml --api-path sample/src      # 插件在 bin/plugins 自动发现，无需 OJ_PLUGINS_DIR
   curl -s http://localhost:9778/v1/api/idp/.well-known/openid-configuration        # discovery：裸 JSON（json.raw，无信封）
   curl -s -c /tmp/idp.jar -d '{"username":"demo","password":"demo1234"}' \
     http://localhost:9778/v1/api/idp/login                                         # OP 登录 → IDP_SESSION cookie
@@ -59,8 +60,11 @@ generated: 2026-09-18
   curl -s http://localhost:9778/v1/api/auth_demo/me/ \
     -H "Authorization: Bearer &lt;access_token>" -H 'X-TENANT-ID: default'            # 受保护路由（Bearer + 租户头）
 
-- 302 一律 `-i` 手动接力 Location；state/code 一次一用（重放 401），跳转腿免租户头靠
-  `tenant.anonymous_paths`（`/oidc/*`、`/idp/*`），对接外部 IdP 只改 config `oidc.rp`
+- 302 一律 `-i` 手动接力 Location；state/code 一次一用（重放 401）。跳转腿豁免**两条列表都要
+  加**（`tenant.anonymous_paths` 免租户头、`auth.anonymous_paths` 免 Bearer）：本 sample 用
+  `/oidc/*`、`/idp/*`、`/idp/.well-known/*` 三条窄面（discovery 比 `/idp/*` 深一层，故单列；
+  auth 的 `/idp/*` 标 `one_layer: true` 确认「有意一层」，见 `config.yaml` 注释）；
+  对接外部 IdP 只改 config `oidc.rp`
 - 已知限制：OP `sub` = users.id 字符串 → 自托管 OIDC 登录 JIT 新建本地账号
   （username = `oidc:<tenant>:<sub>`，占位 hash 不可密码登录，与本地口令账号天然隔离），
   不合并原 demo 行

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:sample/src/news/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:sample/src/news/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: news —— WebSocket + 发布订阅 + 会话状态
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:sample/src/news/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:sample/src/news/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # news —— WebSocket + 发布订阅 + 会话状态
@@ -32,7 +32,7 @@ generated: 2026-09-18
 
 ```bash
 # 启动（仓库根目录）
-bin/oj server -c sample/config.yaml --api-path sample/src
+bin/oj serve -c sample/config.yaml --api-path sample/src
 
 # 终端 1：连上即完成订阅，收到欢迎帧
 websocat ws://localhost:9778/v1/api/news/ws

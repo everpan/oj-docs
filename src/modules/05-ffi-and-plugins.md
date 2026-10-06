@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/05-ffi-and-plugins.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/05-ffi-and-plugins.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 05 · FFI 与插件
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/05-ffi-and-plugins.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/05-ffi-and-plugins.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 05 · FFI 契约与插件（`oj-plugin-ffi/` + `plugins/`）
@@ -16,7 +16,7 @@ generated: 2026-09-18
 
 | 项 | 值 | 说明 |
 |---|---|---|
-| `ABI_VERSION` | **7** | **严格相等**门禁。历史：2=db 轴、3=blob 轴、4=bus 轴+HostContext.deliver、5=kv 轴、6=auth 轴、7=按轴 dlsym |
+| `ABI_VERSION` | **11** | **严格相等**门禁。历史：2=db 轴、3=blob 轴、4=bus 轴+HostContext.deliver、5=kv 轴、6=auth 轴、7=按轴 dlsym、8=bus 字节载荷、9=cookie 会话+上传直传、10=流式面（db.stream + blob put_stream_*）、11=blob 搬运与区间读（copy/move_to/read_range） |
 | `HOST_FINGERPRINT` | rustc + crate 版本 + triple | 仅诊断，不匹配只告警 |
 | `PluginDescriptor` | `{ name, semver, abi_version, fingerprint, desc }` | 任何字段变更都要 bump ABI |
 | `HostContext` | `{ log(level,msg), deliver(topic,payload) }` | `RArc` 共享；插件互不可见（不提供 registry lookup） |
@@ -58,7 +58,7 @@ panic → `RResult::Err`）、每轴一个 `oj_plugin_axis_<name>()`（返回擦
 ### 按轴 dlsym（ABI 7 起，加轴零破坏）
 
 ```rust
-pub const AXES: &[&str] = &["es", "db", "blob", "bus", "kv", "auth", "mq", "mail"];   // :432
+pub const AXES: &[&str] = &["es", "db", "blob", "bus", "kv", "auth", "mq", "mail", "ldap"];   // :432
 ```
 
 `probe_axes`（:432）对每个轴 `dlsym("oj_plugin_axis_<name>")`：
@@ -97,10 +97,12 @@ pub const AXES: &[&str] = &["es", "db", "blob", "bus", "kv", "auth", "mq", "mail
 | `oj-bus-rabbitmq` | bus | lapin |
 | `oj-kv-redis` | kv | RedisKV（迁自 core `kv.rs`） |
 | `oj-auth` | auth | Bearer 守卫；**进程级 GUARD 只认首次 init**（故 OIDC e2e 独立成测试目标） |
+| `oj-mail` | mail | lettre SMTP 投递；发送队列 + worker 池；发件人/收件人白名单 fail-closed（v0.1.19 起） |
+| `oj-ldap` | ldap | ldap3 目录连接（`globalThis.ldap`/`LDAP(name)`）；bind 鉴权 + 目录检索 |
 
 插件自描述 `descriptor.desc` 必填，经 `GET {base}/plugins` 公开。
 
-## 4. 注册表与冲突策略（`oj/src/server_cmd.rs:264`）
+## 4. 注册表与冲突策略（`oj/src/serve_cmd.rs:264`）
 
 | 轴 | 注册形态 | 冲突 |
 |---|---|---|
@@ -110,6 +112,9 @@ pub const AXES: &[&str] = &["es", "db", "blob", "bus", "kv", "auth", "mq", "mail
 | bus | 键选注册表（按 kind） | kind 冲突 → fail fast；kind 未装插件 → "unknown broker kind" |
 | kv | 键选单 vtable 槽 | — |
 | auth | 单槽 | — |
+| mq | 命名客户端注册表（按 kind：kafka/rabbitmq） | kind 冲突 → fail fast |
+| mail | 单槽（default + 命名 profile） | — |
+| ldap | 单槽（default + 命名 profile） | — |
 
 「配置声明了能力但插件未装」→ 启动期 fail fast（§2 闸门）。
 

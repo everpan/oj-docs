@@ -1,19 +1,20 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/plugin-development.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/plugins/plugin-development.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 插件开发
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/plugin-development.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/plugins/plugin-development.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj 插件开发指南（第三方）
 
-插件系统把外部分布式后端（db 方言、blob 驱动、bus 消息、kv 存储、es 引擎）抽为
-**动态链接库**，宿主按平台目录扫描/按清单装配。本文档面向第三方插件作者：
-FFI 契约、ABI_VERSION 纪律、开发/构建/调试全流程。宿主侧装配语义见
-`dev-guide.md` §13，配置见 `user-manual.md` §3。
+插件系统把外部分布式后端（db 方言、blob 驱动、bus 消息、kv 存储、es 引擎）抽成
+**动态链接库**，宿主按平台目录扫描或按清单装配。
+
+**给谁读**：第三方插件作者。本文讲 FFI 契约、ABI_VERSION 纪律、开发/构建/调试全流程。
+宿主侧装配语义见 `dev-guide.md` §13，配置写法见 `user-manual.md` §3。
 
 ## 1. 一句话模型
 
@@ -24,7 +25,7 @@ FFI 契约、ABI_VERSION 纪律、开发/构建/调试全流程。宿主侧装�
 - `ABI_VERSION`（u32，**严格相等**）是唯一硬门禁；构建指纹（rustc/契约 crate 版本/triple）
   仅诊断，不匹配告警不拒绝。
 - 注册是**按轴 dlsym 探测**：宿主 `init` 返回后（abi 门禁通过）对探测表 `AXES`（es/db/
-  blob/bus/kv/auth/mq/mail）逐轴 `dlsym("oj_plugin_axis_<axis>")`——查到符号即该插件提供该轴
+  blob/bus/kv/auth/mq/mail/ldap）逐轴 `dlsym("oj_plugin_axis_<axis>")`——查到符号即该插件提供该轴
   （符号返回静态 vtable 指针），**缺符号 = 不提供该轴**。vtable 指向的静态表在 init 时
   就绪即可；加新轴/加插件不再改动共享槽位结构。
 
@@ -52,7 +53,7 @@ authorization) -> RResult&lt;RString, RString>`，ok 值 JSON `null` = 匿名路
 
 ## 3. ABI_VERSION 纪律
 
-- `ABI_VERSION` 当前 **7**（按轴 dlsym 契约）。**加轴零破坏**——ABI 规则表：
+- `ABI_VERSION` 当前 **11**（按轴 dlsym 契约）。**加轴零破坏**——ABI 规则表：
 
 | 变更 | 是否 bump ABI |
 |------|--------------|
@@ -191,7 +192,7 @@ cargo xtask plugin <name>
 cargo xtask plugin <name> --check   # PluginLoader 预检（ABI/身份/semver/按轴符号，打印 desc + provided axes）
 
 # 运行宿主（dev），加载扫描（config/api-path 相对 CWD）
-./bin/oj server -c config.yaml --api-path src
+./bin/oj serve -c config.yaml --api-path src
 ```
 
 **panic 归因**：panic hook 已输出插件名 + 宿主指纹。若需源码级调试，在 `bin/plugins/<triple>/`
@@ -221,5 +222,6 @@ xtask 也不是发行产物（`bin/` 只放 oj + 插件），排除不影响其�
 | `oj-bus-kafka` / `oj-bus-rabbitmq` | bus | rdkafka / lapin | core `bridge/broker/` |
 | `oj-kv-redis` | kv | redis | core `bridge/kv.rs` RedisKV |
 | `oj-auth` | auth | jsonwebtoken | core `bridge/auth.rs`（守卫；auth 端点已 JS 化） |
+| `oj-ldap` | ldap | ldap3 | 新增 ldap 轴（`globalThis.ldap`/`LDAP(name)`；bind 鉴权 + 目录检索） |
 
 > 所有第一方插件源码统一位于 `plugins/`；构建产物（cdylib）归置 `bin/plugins/<triple>/`，由 `.gitignore` 忽略。

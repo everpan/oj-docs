@@ -10,7 +10,7 @@ updated: 2026-09-14
 | 文档 | 看它解决什么 |
 |---|---|
 | [多租户新手指南](/reference/tenant-guide) | 两层开关（`enable` / `sql_guard`）、共享表双声明、`db.asSystem()` 逃生口、报错对照表 |
-| [内置 API 与鉴权](/reference/builtin-api-auth) | 内置接口总览、登录与 refresh 时序、Bearer 守卫（oj-auth 插件） |
+| [内置 API 与鉴权](/reference/builtin-api-auth) | 内置接口总览、登录与 refresh 时序、Bearer 守卫（见 [oj-auth 插件](/reference/plugins/oj-auth)） |
 | [07 · 鉴权与多租户](/guide/07-auth-tenant) | 学习路径版：走一遍 sample 的登录 / refresh / logout，多租户与 OIDC 概貌 |
 
 ## 阅读顺序

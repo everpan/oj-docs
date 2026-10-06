@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/tenant-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/tenant-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 多租户新手指南
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/tenant-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/tenant-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 多租户（tenant）新手指南
@@ -84,7 +84,7 @@ tables:
     columns:
       id:    { type: integer }
       item:  { type: text }
-      tenant_id: { type: text }   # 必须，漏了启动/构建/迁移都会报错
+      tenant_id: { type: text }   # 必须；类型限 text/integer/bigint（v0.1.24 起数值列也支持）
 ```
 
 报错长这样，照着补列、或者把它声明成共享表（见下）：
@@ -94,7 +94,7 @@ schema: [order] 表 "order" 缺 tenant_id 列（tenant.sql_guard 启用中；
 共享表请显式 tenant: false 并加入 config tenant.shared_allow）
 ```
 
-校验挂在三处：`oj server` 启动、`oj build`、`oj migrate`——哪个入口都绕不过去。
+校验挂在三处：`oj serve` 启动、`oj build`、`oj migrate`——哪个入口都绕不过去。
 
 ## 共享表（字典表）怎么办
 
@@ -130,20 +130,93 @@ const rows = await db.asSystem().table("order").select(["id"]).all();
 - 每次调用都打审计日志到服务端控制台——生产上盯这个日志。
 - **别在普通业务 handler 里用**。review 时看到 asSystem 应该问一句「为什么」。
 
-`oj test`（进程内测试运行器）没有租户头，deny 模式下要跑涉及租户表的用例，
-也是在测试代码里 `db.asSystem()` 开一道。
+`oj test`（进程内测试运行器）默认不带租户头；deny 模式下要跑涉及租户表的用例，
+可以 `db.asSystem()` 开一道，或用下面的 `db.asTenant()`（v0.1.20）声明一个租户身份——
+后者仍保留租户防护，更接近生产行为。
+另：`oj test` 默认把 schema/seed/fixtures 和 handler 的 `db` 落在 config `db.test` 库上
+（避免污染开发库），启动会打印 `oj test: using db "test"`。
+
+## 反向逃生口：db.asTenant()（v0.1.20）
+
+`asSystem` 是「把防护整个关掉」；`asTenant` 恰好相反——**给一个匿名请求补上租户身份**。
+
+什么时候需要？典型是**公开分享页 / OIDC 回调**这类请求：浏览器带不了自定义头，路由被
+配进 `tenant.anonymous_paths` 豁免（所以不会被 400 拦），但 handler 仍要按某个租户读数据。
+以前只能 `db.asSystem()` 全放行，现在可以：
+
+```yaml
+tenant:
+  enable: true
+  sql_guard: "deny"
+  allow_as_tenant: true        # ① 总开关，默认 false，不显式打开下面的都白搭
+  anonymous_paths:
+    - "/share/*"               # ② 该路由必须命中豁免（请求进得来才算匿名）
+```
+
+```ts
+// /share/detail handler：URL 上带着租户，用它声明身份
+export const get = async () => {
+  const d = db.asTenant(http.param("tenant"));   // ③ 声明身份
+  return json.ok(await d.table("order").select(["id"]).all());
+  //    ^ 这里仍会自动补 tenant_id 条件——只是值来自上面声明的租户
+};
+```
+
+三道门禁**全过**才生效，缺一不可：
+
+1. `tenant.allow_as_tenant: true`（配置默认关）；
+2. 该请求确实是**匿名**的——命中了 `anonymous_paths` 且没带租户头（`oj test` 里对应
+   `--anonymous`）；
+3. `id` 非空。
+
+不满足任意一条 → **直接抛错**（不是静默忽略），所以调试时看到异常先核对这三条。
+另外它是**请求级、只能设一次**：已经带租户头的请求、或同一请求里第二次调用，都会抛错
+（防止 handler 中途切换身份）。
+
+一句话选型：**要跨租户看全部用 `asSystem`，要给匿名请求认一个租户用 `asTenant`。**
+
+## 豁免路径怎么写（anonymous_paths）
+
+`tenant.anonymous_paths`（以及 `auth.anonymous_paths`）写的是**去掉 API 前缀**后的路径，
+支持四种通配形态：
+
+| 写法 | 含义 | 命中例子 |
+|---|---|---|
+| `/health` | 字面全等 | 只有 `/health` |
+| `/public/*` | 严格**一层** | `/public/a` 命中；`/public/a/b` **不**命中 |
+| `/idp/**` | **跨任意层** | `/idp`、`/idp/a`、`/idp/a/b/c` 全命中 |
+| `/report/*/export` | 中段 `*` 恰好一段 | `/report/7/export` 命中；`/report/a/b/export` 不命中 |
+
+> **v0.1.20 变更（只发生在 auth 侧）**：`auth.anonymous_paths` 的尾 `/*` 以前被 oj-auth 当成
+> 「任意层前缀」（`/idp/*` 连 `/idp/.well-known/openid-configuration` 也免 Bearer），现在收紧为
+> 严格一层，需要跨层请改用 `**`。**租户侧不受此变更影响**——`tenant.anonymous_paths` 自引入起
+> 就是严格一层（旧 server 实现即 `!rest[1..].contains('/')`），故**不参与**启动期迁移 WARN。
+>
+> 装配期只对 **`auth.anonymous_paths`** 打迁移 WARN，两个条件同时成立才打（v0.1.23 起）：
+> ① 条目是**旧式前缀形态**（只有尾段一个 `*`、其余段全字面，如 `/idp/*`——旧 oj-auth 实现
+> 「砍尾 `*` 再 `starts_with`」只有这种形态能命中；含中段 `*` 的结构条目如
+> `/public/anchor/*/issues/*` 是 v0.1.20 之后刻意写的，不在此列）；② 该条目确实丢了面（存在
+> 一条已注册路由比严格一层更深）。
+>
+> 确属「有意一层」时，把条目写成对象形态并标 `one_layer: true` 永久消音（示例见
+> `docs/devkit/api-manual.md` 的鉴权章；`tenant.` 段同样接受这个形态，只是那里不会告警，
+> 标记等于备注）。`one_layer` 标在末段不是 `*` 的条目上无意义，装配期直接报错。
 
 ## 常见报错对照表
 
 | 报错信息 | 什么意思 | 怎么修 |
 |---|---|---|
 | 400 缺租户头 | 请求没带 `X-TENANT-ID`（或配的头名） | curl/前端补上头；测试代码用 `db.asSystem()` |
+| 403 租户未绑定声明（`require_signed_claim: true`，v0.1.41） | 裸头不再自证：`claims.tenant` 缺失或与头不符 | JWT 签发时把租户写进 `claims.tenant`；头仅作一致性复核 |
 | `tenant guard: insert tenant_id mismatch` | insert 想写别人的租户 | 别传 tenant_id（框架自动填当前的），或确认你确实该用 asSystem |
 | `tenant guard: update sets.tenant_id not allowed` | update 想把行迁到别的租户 | 删掉 sets 里的 tenant_id；跨租户迁移是系统操作，走 asSystem + 手工 SQL |
 | `raw sql lacks tenant_id on [t]` | 裸 SQL 查了租户表但完全没提 tenant_id | 补 `where tenant_id = ?`（参数传 `http.tenantId`）；或改用 `db.table()` 构造器 |
 | `schema: [m] 表 "t" 缺 tenant_id 列` | guard 开着但表声明没这列 | 补列；共享表则 `tenant: false` + `shared_allow` 双声明 |
+| `schema: [m] 表 "t" 的 tenant_id 类型 "double" 不受支持`（v0.1.24） | 声明期校验：`tenant_id` 只能是 text/integer/bigint | 改成受支持类型（数值租户 id 见下），或把该表声明为共享表 |
+| `tenant guard: tenant id "acme" is not a valid integer for numeric column t.tenant_id` | `tenant_id` 列是 integer/bigint，但租户头不是十进制字面量 | 数值租户列请用数字租户 id；或把该列改成 text（推荐雪花租户 id 存 text） |
 | `warn: ... 共享表声明 "x" 未列入 tenant.shared_allow` | 声明了共享但白名单没点名 | config 补 `tenant.shared_allow: [x]`；不补则该表按受约束处理 |
 | `warn: tenant.sql_guard ... 但 tenant.enable=false` | 开了防护但没开租户识别 | `tenant.enable: true`，或者关掉 sql_guard |
+| `db.asTenant: ...`（调用即抛） | 三道门禁没过：开关没开 / 请求不是匿名 / id 为空 | 依次核对 `tenant.allow_as_tenant: true`、路径在 `anonymous_paths` 且未带租户头、id 非空；同一请求只调一次 |
 
 ## 选型建议
 

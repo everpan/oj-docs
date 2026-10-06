@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/06-toolchain.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/06-toolchain.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 06 · 工具链
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/06-toolchain.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/06-toolchain.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 06 · 工具链与辅助 crate（`tools/`、`benches/`、`tests/plugins/`）
@@ -36,8 +36,8 @@ bin/
 - `host_triple()`（:43）由 `rustc -vV` 的 `host:` 行取；与运行期
   `ffi::triple()`（按 `std::env::consts` 重建）一致。
 - 插件存放文件名以 **descriptor.name** 为名（与 rustc 产物名解耦，`-`→`_` 不同）。
-- `PLUGINS`（:25）= es / db-mysql / db-postgres / blob-s3 / bus-kafka / bus-rabbitmq /
-  kv-redis / **auth**。
+- `PLUGINS`（:28）= es / db-mysql / db-postgres / blob-s3 / bus-kafka / bus-rabbitmq /
+  kv-redis / auth / mail / ldap。
 
 ## 2. `tools/oj-cert`（证书工具，独立不随 oj 发行）
 

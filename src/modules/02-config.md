@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/02-config.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/02-config.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 02 · 配置模型
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/02-config.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/02-config.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 02 · 配置模型（`src/config.rs`）
@@ -30,6 +30,10 @@ generated: 2026-09-18
 | `api_prefix` | `"/v1/api"` | API 前缀；CLI `-b` 覆盖；空前缀拒绝（避免全 404 静默坑）。旧键 `base` 兼容（serde alias，并存报错） |
 | `app_prefix` | `"/"` | 静态站点前缀；`/` = 全路径兜底；非 `/` 时仅前缀下的 GET/HEAD 落静态（前缀剥除后解析），前缀外 404；API 永远优先。不以 `/` 开头 → fail-fast |
 | `app_path` | `None` | 静态站点根（相对 config 目录；CLI `--app-path` 相对 CWD）；`None` = 不开静态服务 |
+| `app_spa_fallback` | `false` | SPA 深链接回落（v0.1.20）：静态未命中 + 无扩展名 + Accept html + 不在 `api_prefix` 下 → 送 `index.html`。默认关（静默把 404 变 200 会掩盖错配） |
+| `html_meta` | `None` | 路由感知 meta 目录名（v0.1.20，相对 `app_path`）：送 HTML 前查 `<app_path>/<html_meta>/<path>.json`，注入 `<title>`/`<meta>`/`<link rel=canonical>`。该目录不对静态服务公开 |
+| `html_meta_handler` | `None` | 动态 meta 源（v0.1.25）= 业务 handler 的**路由路径**：送 HTML 前内部派发该 GET handler（`?path=` 传**已剥 `app_prefix`** 的路径，**恒匿名**：请求头/租户头/请求体不传递），返回的 JSON 与 `html_meta` 同白名单注入（**替换** head 里同名旧标签），静态 JSON 打底、动态按 key 覆盖；保留键 `cache_control` 覆盖本响应缓存头。失败 → WARN + 原样送出（fail-open）。**装配期校验命中 GET 路由**（`oj/src/app.rs::validate_html_meta_handler`） |
+| `html_cache_control` | `None` | HTML 响应的 `Cache-Control`（v0.1.25，**只管 HTML**，资源不受影响）；handler 的 `cache_control` 优先；None = 不加头 |
 | `timeout` | `"30s"` | 单请求执行超时，超时 → 408 |
 | `pool_size` | `4` | JS 执行并发度（= actor 数） |
 | `max_upload_bytes` | `10 MiB` | 超出 → 信封 413；axum 层 2x 硬顶（裸 413） |
@@ -45,16 +49,18 @@ generated: 2026-09-18
 
 | 段 | 类型 | 语义 |
 |---|---|---|
-| `db` | `HashMap<name, DSN>` | 多库混用（`sqlite://` / `mysql://` / `postgres://`），经 `DbBackendRegistry` 按 scheme 认领 |
-| `redis` | `HashMap<name, URL>` | 仅 `redis.default` 参与装配（其余 warn 忽略）；有声明但无 kv 插件 → fail fast；未声明 → 内置 `InMemoryKV` |
-| `tenant` | `TenantCfg` | `enable` + `header_key`（默认 `X-TENANT-ID`）+ `anonymous_paths`（尾 `/*` 一层通配） |
-| `auth` | `AuthCfg` | `jwt_secret`（空 → fail fast）、`signing_method`(HS256/384/512)、access/refresh 时长、`anonymous_paths` |
+| `db` | `HashMap<name, DSN>` | 多库混用（`sqlite://` / `mysql://` / `postgres://`），经 `DbBackendRegistry` 按 scheme 认领。**键 = 库名**：`oj migrate` / `oj test fixture` / `oj schema diff` 的 `--db` 取值域即此（缺省 `default`，未声明 fail-fast，见 `docs/migration.md` §3.8） |
+| `redis` | `HashMap<name, URL>` | 键 = profile 名；缺省装配 `redis.default`，可用 `oj test`/`oj exec` 的 `--redis <profile>` 选其他 profile 为默认源（未声明 fail-fast）。其余未选中的 profile warn 忽略；有声明但无 kv 插件 → fail fast；未声明 → 内置 `InMemoryKV` |
+| `tenant` | `TenantCfg` | `enable` + `header_key`（默认 `X-TENANT-ID`）+ `anonymous_paths`（通配见下）+ `sql_guard` + `shared_allow` + `allow_as_tenant`（`db.asTenant` 开关，默认 false） |
+| `db_query` | `QueryLimits` | 构造器 LIMIT：`default_limit`（默认 100，顶层 select 未给 limit 时的隐式值）+ `max_limit`（默认 1000，显式 limit 的 clamp 上界，硬顶 100000）。**不能写进 `db:`**——`db` 是 name→DSN map，键即库名 |
+| `auth` | `AuthCfg` | `jwt_secret`（空 → fail fast）、`signing_method`(HS256/384/512)、access/refresh 时长、`anonymous_paths`（条目＝字符串或 `{path, one_layer}`，见 §4） |
 | `oidc` | `OidcSection` | `issuer` / `private_key_path`（相对 config 目录）/ `rp: {tenant → {issuer, client_id, client_secret, scope}}` / `clients: {id → {secret, redirect_uris, tenant}}` |
-| `blob` | `BlobSection` | 平铺字段 = 旧单后端（等价 `backends.default`）；`backends.<name>` = 命名多后端；**两者并存且平铺非默认 → 歧义 Err** |
-| `es` | `EsCfg` | `endpoint` |
-| `broker` | `BrokerCfg` | `kind`: local/kafka/rabbitmq；`brokers` / `url` / `group` / `topic_prefix` |
+| `blob` | `BlobSection` | 平铺字段 = 旧单后端（等价 `backends.default`）；`backends.<name>` = 命名多后端；**两者并存且平铺非默认 → 歧义 Err**。键 = profile 名，供 `--blob <profile>` 选默认源（未声明 fail-fast） |
+| `es` | `HashMap<name, EsCfg>` | **v0.1.34 起为命名 map**；旧单对象写法 `es: { endpoint: ... }` 自动包成 `{ default: ... }`，完全兼容。键 = profile 名，供 `oj test`/`oj exec` 的 `--es <profile>` 选取（缺省 `default`，未声明 fail-fast）。值 `endpoint` |
+| `broker` | `HashMap<name, BrokerCfg>` | **v0.1.34 起为命名 map**；旧单对象写法 `broker: { kind: kafka, brokers: [...] }` 自动包成 `{ default: ... }`，完全兼容。键 = profile 名，供 `--broker <profile>` 选取。值：`kind`: local/kafka/rabbitmq；`brokers` / `url` / `group` / `topic_prefix` |
 | `plugins` | `HashMap<name, cfg>` | **一段三用**：键 = 严格清单（非空 map 只装配列出的）/ 值 = 透传 cfg（非空对象原样透传，空对象回落轴适配器）/ 缺省或空 map = 扫描模式。旧 list 写法解析报错 |
 | `plugins_dir` | `Option<PathBuf>` | 相对 config_dir；`None` 走四级后备（见 [05](/modules/05-ffi-and-plugins)） |
+| `vars` | `HashMap<name, String>` | 部署期常量（v0.1.25）：JS `vars.get(name)` 的**唯一**数据源（**同步** op，装配期冻结）。fail-closed——只有声明的键可读，平台没有「读任意 OS env / 任意 config 键」的通道。值只能是标量（数字/布尔按 YAML 字面量成串；嵌套 map/list 解析期报错） |
 
 ## 3. 时长解析
 
@@ -69,9 +75,32 @@ generated: 2026-09-18
 | `blob` 平铺/命名歧义 | `BlobSection::entries()` |
 | `auth.jwt_secret` 非空 | `oj/src/app.rs:241` |
 | `migrate_on_start` / `ownership_guard` 非法值 | `oj/src/app.rs:173-192` |
-| `server.api_prefix` 为空 | `oj/src/server_cmd.rs:95` |
+| `server.api_prefix` 为空 | `oj/src/serve_cmd.rs:95` |
+| `server.html_meta_handler` 未命中 GET 路由 | `oj/src/app.rs::validate_html_meta_handler`（v0.1.25） |
 | 模块名/版本白名单 | `oj/src/manifest.rs:25,37` |
 | schema.yaml 标识符白名单 `[A-Za-z_][A-Za-z0-9_]*` | `oj/src/schema.rs:103` |
+| `anonymous_paths` 的 `one_layer` 只许标在末段为 `*` 的条目上 | `config::validate_anon_paths()`（调用点 `oj/src/app.rs` 的 `App::from_config`，`db_query.validate()` 之后） |
+| `oj build` 读配置失败改为打 warn（此前静默） | `oj/src/build_cmd.rs` 的 `sql_guard_of_config` / `tasks_dir_of` |
+
+### 4.1 `anonymous_paths` 的条目形态（tenant / auth 同形）
+
+条目是 `AnonPath`（`src/config.rs`）：字符串简写，或对象 `{ path, one_layer }`。
+**对象形态只认 `path` 与 `one_layer` 两个键**——手写 `Deserialize`（不用 `untagged`），
+未知键/缺 `path`/类型错都直接报错，杜绝 `one_layr: true` 这类笔误被静默吃成 `false`。
+
+- **两种形态在消费侧归一为路径字符串**（`config::anon_paths()`）：server 的 `Pipeline`
+  与 oj-auth 插件的 cfg JSON 都只吃 `Vec<String>`，故插件侧零改动、ABI 不变。
+- `one_layer: true` = 显式确认该尾 `/*` 是**有意的一层**，退出迁移 WARN（该标记只对
+  **auth** 列表有实际作用——见下）。
+- 迁移 WARN 自 v0.1.23 起**按影响面判定**，且**只针对 `auth.anonymous_paths`**（v0.1.20 的
+  「任意深度 → 严格一层」收紧只发生在 oj-auth 侧；`tenant.anonymous_paths` 自引入起就是严格
+  一层，对租户条目说「收回了面」是伪前提）。两个条件同时成立才告警：① 条目是**旧式前缀
+  形态**（只有尾段一个 `*`、其余段全字面——旧 oj-auth 的 `strip_suffix("/*")` + `starts_with`
+  只有这种形态能命中，含中段 `*` 的结构条目是 v0.1.20 后刻意写的）；② 该条目确实**丢面**
+  （存在已注册路由比严格一层更深；`**` 只多出「零层」不算）。实现：`oj/src/app.rs` 的
+  `warn_legacy_tail_wildcards` / `migration_warn_entries` / `legacy_entries` /
+  `tail_entry_loses_coverage` / `is_legacy_prefix_shape`，调用点在路由表建好之后。判定只依赖已
+  注册路由是充分的——静态托管与 `/blob` 都在鉴权之前直接返回，不经匿名匹配。
 
 ## 5. 已知问题
 

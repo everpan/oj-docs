@@ -5,14 +5,15 @@ updated: 2026-09-18
 
 # mail 专栏
 
-邮件投递：`oj-mail` 插件 + `smtp:` 配置段，业务侧只面对全局 `Mail` / `mail`。
+邮件投递：[oj-mail 插件](/reference/plugins/oj-mail) + `smtp:` 配置段，业务侧只面对全局 `Mail` / `mail`。
 
 | 文档 | 看它解决什么 |
 |---|---|
+| [oj-mail 插件状态](/reference/plugins/oj-mail) | 第一方 cdylib 插件的后端轴、配置段、依赖与构建注意、当前状态 |
 | [邮件投递（SMTP）手册](/reference/mail-smtp) | 完整参考：宿主/插件职责边界、`smtp:` 配置与白名单门禁、JS API 与错误码、附件引用、`sendRaw` 语义、`enqueue` 反馈通道、安全清单、构建运维与已知限制 |
 | [JS API 手册 · §6 全局对象](/reference/api-manual/06) | `mail` 速查：方法签名、请求结构、信封与错误码（先看这里上手） |
 | [用户手册](/reference/user-manual/) | `config.yaml` 里 `smtp:` 段的字段说明与装配期校验 |
-| [插件开发](/reference/plugin-development) | `oj-mail` 是 cdylib 插件：插件发现路径、ABI 与身份预检、`cargo xtask plugin mail` 构建 |
+| [插件开发](/reference/plugins/plugin-development) | `oj-mail` 是 cdylib 插件：插件发现路径、ABI 与身份预检、`cargo xtask plugin mail` 构建 |
 | [WebSocket](/reference/websocket) | §6 里 `bus.subscribe("mail.result")` 的订阅侧说明（`bus.subscribe` 仅 WS 上下文可用） |
 
 ## 阅读顺序

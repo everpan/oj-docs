@@ -60,7 +60,7 @@ updated: 2026-09-08
 5. vtable 包进核心后端，冲突或缺失必需插件时 fail-fast。
 
 插件自己要收敛 panic：`oj_plugin_entry!` 只保护 `init`，vtable 方法要插件自己用
-`catch_value` / `catch_future` 包。详见[插件开发](../reference/plugin-development.md)。
+`catch_value` / `catch_future` 包。详见[插件开发](../reference/plugins/plugin-development.md)。
 
 ## 从哪一页开始读
 

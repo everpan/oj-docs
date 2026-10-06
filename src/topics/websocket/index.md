@@ -10,7 +10,7 @@ updated: 2026-09-14
 | 文档 | 看它解决什么 |
 |---|---|
 | [WebSocket](/reference/websocket) | `ws.ts` 生命周期钩子、帧池模型、订阅与发布、出站客户端 `new WebSocket` |
-| [MQ 与长任务](/reference/mq-tasks) | Kafka / RabbitMQ 命名客户端、常驻消费任务、tasks 长任务池 |
+| [MQ 与长任务](/reference/mq-tasks) | Kafka / RabbitMQ（[oj-bus-kafka](/reference/plugins/oj-bus-kafka) / [oj-bus-rabbitmq](/reference/plugins/oj-bus-rabbitmq)）命名客户端、常驻消费任务、tasks 长任务池 |
 | [08 · 实时与消息](/guide/08-realtime) | 学习路径版：一条消息从 HTTP 发布到 WS 收到，中间发生了什么 |
 
 ## 阅读顺序

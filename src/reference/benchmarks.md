@@ -1,14 +1,17 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/benchmarks.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/benchmarks.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 基准测试
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/benchmarks.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/benchmarks.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # bridge 性能测试
+
+> 给谁读：想知道 oj 的 JS↔Rust 边界有多快、或要复现/对比基准数据的人。表中数字是
+> 文档记录的实测值，不是目标值。
 
 基准：`cargo bench`（criterion，release 模式）。
 环境：macOS aarch64（Apple Silicon），deno_core 0.409 / V8 150.4，2026-08-02。
@@ -55,7 +58,7 @@ generated: 2026-09-18
 ## fetch 优化的根因
 
 最初 5.45 ms/req 不是 JS/op 路径开销：本机装有系统代理（127.0.0.1:7890，Clash 系），
-reqwest 默认读取 macOS 系统代理配置，且回环例外（`127.*`）未生效——回环流量被送进
+reqwest 默认读取 macOS 系统代理配置，且回环例外（`127.*`）未生效。回环流量被送进
 本机代理进程（服务器端看到的 `User-Agent: Go-http-client/1.1` 即代理转发证据），
 每请求一次新建代理连接。修复：Bridge 的 reqwest Client 改 `no_proxy`（不走系统代理），
 纯 reqwest 回环验证从 1.9 ms/req 降至 65 µs/req。
@@ -64,7 +67,7 @@ v0.1.8 起换 deno_fetch：其 `Options.proxy` 缺省 `None`，不读系统代�
 
 ## 解读
 
-- **异步 op 边界约 140 ns**（redis.get/db.exec，7 M/s 级），这是 JS↔Rust Promise 往返的
+- **异步 op 边界约 140 ns**（redis.get/db.exec，7 M/s 级）。这是 JS↔Rust Promise 往返的
   地板成本，剩下都是业务代码自己的开销。
 - **序列化是主要变量成本**：信封 marshal 已从 op 路径中消除（单遍写 buffer）；
   db.query 的行数据 serde_v8 物化（约 270 ns/行级对象）在真实 SQL 实现接入后仍是

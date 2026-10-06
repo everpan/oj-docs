@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/03-server-http.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/03-server-http.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 03 · HTTP 服务
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/03-server-http.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/03-server-http.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 03 · HTTP 服务（`server/`）
@@ -49,13 +49,37 @@ Router::new()
 7. **路由**：`normalize` → `RouteTable.lookup` → `Hit` 执行 / `Conflict` 500 /
    `MethodNotAllowed` 405 / `NotFound` 继续。
 8. **dev 目录镜像兜底**：`Routes::resolve`，且被 `.route` 替换掉的方法不复活（`is_replaced`）。
-9. **静态兜底**：GET/HEAD + `resolve_static`（逐段解码 + 越界段拒绝）→ 文件响应。
-10. 404 信封。
+9. **静态兜底**：GET/HEAD + `resolve_static`（逐段解码 + 越界段拒绝）→ 文件响应；
+   HTML 响应先过 per-route meta 注入（`static_page`）：`server.html_meta` 的构建期 JSON
+   打底 → `server.html_meta_handler`（v0.1.25）**内部派发**一个 GET handler（`?path=` 传
+   **已剥 `app_prefix`** 的路径；**恒匿名**——请求头/租户头/请求体都不传递，`tenant_id=None` +
+   `anonymous=true`，否则 `sql_guard: deny` 会把客户端指定的租户当过滤条件）按其返回 JSON
+   覆盖同白名单键；派发失败一律 WARN + 按静态结果送出（fail-open）；`html_cache_control` /
+   handler 的 `cache_control` 决定 HTML 的 `Cache-Control`（二者皆无 = 不加头）。
+   注入是**替换**：`inject_head` 先摘掉 head 里同名的 `<title>`/`<meta>`/`canonical`
+   （浏览器与爬虫只认第一个），再在 `</head>` 前放新标签；`<script>`/`<style>` 内容当不透明
+   文本跳过；`to_lowercase()` 索引错位（非 ASCII）已在 v0.1.25 换成 ASCII 不敏感字节扫描。
+10. **SPA 深链接回落**（`server.app_spa_fallback`，默认关）：上一步未命中 + 无扩展名
+   + Accept 视为 html + **不在 `api_prefix` 下** → 送 `index.html`。不含 API 前缀是
+   硬要求——否则拼错的 API 路径会被 index.html 吞成 200，掩盖真实 404。
+11. 404 信封。
 
-`path_matches`（`lib.rs:94`）语义：精确匹配，或尾 `/*` **严格一层**前缀通配
-（`/oidc/*` 命中 `/oidc/callback`，不命中 `/oidc` 与 `/oidc/a/b`）。
+`path_matches`（`lib.rs`）语义（v0.1.20 起四形态，逐段比对）：
+
+| 模式     | 语义                   | 例                                                                      |
+| -------- | ---------------------- | ----------------------------------------------------------------------- |
+| 字面     | 逐段全等               | `/health`                                                               |
+| 尾 `/*`  | **严格一层**（不变）   | `/oidc/*` 命中 `/oidc/callback`，不命中 `/oidc` 与 `/oidc/a/b`           |
+| 中段 `*` | 恰好一段               | `/public/anchor/*/states` 命中 `/public/anchor/v1c/states`               |
+| `**`     | 零段或多段（跨层）     | `/public/**` 命中 `/public`、`/public/a`、`/public/a/b`                  |
+
 ⚠️ 该函数在 `server` 与 `oj-auth` 插件里各有一份（插件不能依赖 server crate），
-注释互指，改一处须同步另一处。
+注释互指，改一处须同步另一处（含两侧单测矩阵）。v0.1.20 已把 oj-auth 旧实现
+（尾 `*` 实际任意深度）收紧到同一语义：**深路径请改写 `**`**。装配期的迁移 WARN
+（v0.1.23 起）**只对 `auth.anonymous_paths`** 打，且两个条件同时成立才打：
+① 条目是旧式前缀形态（只有尾段一个 `*`、其余段全字面）；② 该条目确实丢了面
+（存在更深的已注册路由）。`tenant.anonymous_paths` 自引入起即为同一严格一层语义、
+不参与该提示；`/blob` 与静态兜底在鉴权前直接返回、不经匿名匹配（见 `lib.rs` 互指注释）。
 
 ## 3. 路由表（`routes.rs`）
 
@@ -121,7 +145,7 @@ actor 线程内跑 `current_thread` runtime，**串行**执行 job；并发度 =
 
 全仓唯一的测试证书夹具：`write_cert(dir, nbf, exp)` / `write_cert_into(&mut cfg, dir, ..)`
 生成**真实签名**的 JWS + SPKI 公钥并写回 `ServerCfg`。
-证书门禁后所有启动测试的公共前置，由 `oj`（server_cmd/e2e）与根 crate（dev-dep）复用。
+证书门禁后所有启动测试的公共前置，由 `oj`（serve_cmd/e2e）与根 crate（dev-dep）复用。
 
 ## 9. 已知债
 

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/db-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/db-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: db 新人手册
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/db-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/db-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 # db 新人手册 —— 配置 + JS 全量数据访问
 
@@ -15,7 +15,10 @@ generated: 2026-09-18
 > 本手册讲「怎么上手、为什么这样设计」。逐 API 的穷举式参考见
 > [`docs/devkit/api-manual.md`](/reference/api-manual/) 第 6 章「db / DB(name)」。
 > 所有 API 名、字段名、报错文案均与源码（`src/bridge/bootstrap.js`、`src/bridge/query.rs`、
-> `src/bridge/db.rs`）逐字核对，版本 0.1.14。
+> `src/bridge/db.rs`）逐字核对，版本 0.1.37。
+>
+> 文中「fail-fast」= 发现问题立刻报错退出；「白名单」= 只有预先声明过的表/列才能被
+> 访问，其余一律拒绝。
 
 ---
 

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-module:docs/prd/ojm-api-codegen-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-module:docs/prd/ojm-api-codegen-guide.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: API 契约代码生成
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-module:docs/prd/ojm-api-codegen-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-module:docs/prd/ojm-api-codegen-guide.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # ojm api 契约代码生成指南（新人向）

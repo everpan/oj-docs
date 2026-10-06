@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/01-core-bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/01-core-bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 01 · 核心运行时
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/01-core-bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/01-core-bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 01 · 核心运行时（`src/`，根 crate `only-js`）
@@ -31,7 +31,7 @@ ESM 入口把它们装配成全局对象。加一个 JS 能力 = 加一个 `op_`
 | blob | `op_blob_put/get/del/url/content_type` | `blob.rs` |
 | bus | `op_bus_publish/subscribe/kind` | `bus.rs` |
 | es | `op_es_search/index/del` | `es.rs` |
-| 内省/fetch/日志 | `op_plugins`、`op_fetch`、`op_log` | `plugins_op.rs`、`fetch.rs`、`log.rs` |
+| 内省/fetch/日志 | `op_plugins`、`op_vars_get`、`op_fetch`、`op_log` | `plugins_op.rs`、`vars.rs`（v0.1.25）、`fetch.rs`、`log.rs` |
 | 模块解析 | `op_resolve_cjs`；别名 `resolve_alias` / 相对 `resolve_relative`（同一份探针，`oj build` 复用） | `module_loader.rs` |
 | OIDC | `op_oidc_sign/verify/info` | `oidc.rs` |
 | WS | `op_ws_send`、`op_ws_close` | `ws.rs` |
@@ -55,11 +55,15 @@ ESM 入口把它们装配成全局对象。加一个 JS 能力 = 加一个 `op_`
 | `fetch(url, opts)` | 浏览器兼容子集 | 经 `reqwest` |
 | `log` | `debug/info/warn/error(msg, ...kv)` | zap 风格交替键值 |
 | `plugins()` | — | 返回已加载插件自描述 |
+| `vars` | `get(name)` | 部署期常量（config `vars:` 段，v0.1.25）：**同步**；未声明键 → `null`（fail-closed，无「读任意 env/config 键」通道） |
 | `cert` | `generate(bits, nbf, exp)` / `renew(pem, nbf, exp)` | RSA keygen + RS256 在 Rust |
 | `jwt` | `sign` / `verify` / `accessDuration` / `refreshDuration` | |
 | `bcrypt` | `hash` / `verify` | Rust 侧 `spawn_blocking` |
 | `oidc` | `sign` / `verify(token, jwks?)` / `jwks()` / `issuer` / `rp` / `clients` | 私钥不出 Rust |
-| `crypto` | `sha256Hex` / `randomHex` | 合并进原生 `crypto` |
+| `crypto` | `sha256Hex` / `randomHex` / `aesGcmEncrypt` / `aesGcmDecrypt` / `getRandomValues` | 合并进原生 `crypto` |
+| `ldap` / `LDAP(name)` | `bind` / `search` / `searchPaged` / `whoami` / `compare` | 目录服务（`oj-ldap`）；未配置报 "ldap not configured" |
+| `mail` / `Mail(key)` | `send` / `sendSync` / `enqueue` / `result` / `sendRaw` / `profiles()` | SMTP 投递（`oj-mail`）；未配置抛错 |
+| `Kafka(name)` / `RabbitMQ(name)` | `send`/`publish` / `poll` / `commit`/`ack`/`nack` | 命名消息客户端（bus 之上；消费端限于 task 上下文） |
 | `finish()` | — | 结束会话且不写响应 |
 | `__ojRequire(name, referrer)` | — | CJS 互操作（进程级缓存） |
 

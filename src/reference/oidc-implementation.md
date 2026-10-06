@@ -1,24 +1,28 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/oidc-implementation.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/oidc-implementation.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: OIDC 实现
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/oidc-implementation.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/oidc-implementation.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # OIDC 实现文档（OP + RP 双角色）
 
-> 实现走读：sample 内置 OIDC 的架构、时序与数据流。接入视角见
-> [oidc-integration.md](/reference/oidc-integration)，设计裁决见
+> 给谁读：要读懂或改动 sample 内置 OIDC 实现的维护者。这是实现走读，讲架构、时序与
+> 数据流。想在自己的项目里**接入** OIDC，请先看
+> [oidc-integration.md](/reference/oidc-integration)；设计裁决见
 > `docs/superpowers/specs/2026-09-05-sample-oidc-design.md`。
+>
+> 术语：**OP**（OIDC Provider）= 签发身份的一方；**RP**（Relying Party）= 消费身份、
+> 把登录委托给 OP 的一方。本项目同进程同时扮演两个角色。
 
 ## 1. 总体架构
 
 同进程双角色：`src/idp/` 是 OP（OIDC Provider，签发身份），`src/oidc/` 是 RP
 （Relying Party，消费身份）。两者共享 core 注入的 `oidc` 全局（RS256 原语 + 配置态）
-与 KV；会话桥接复用既有 `auth` 模块的 `issueTokens`。业务请求鉴权不变——oj-auth 插件
+与 KV；会话桥接复用既有 `auth` 模块的 `issueTokens`。业务请求鉴权不变：oj-auth 插件
 Bearer 守卫 + 租户头照旧，OIDC 只负责「换 token」那一跳。
 
 ```mermaid
@@ -27,7 +31,7 @@ flowchart TD
         UA["浏览器 / curl"]
     end
 
-    subgraph Server["oj server（同进程）"]
+    subgraph Server["oj serve（同进程）"]
         subgraph RP["RP 模块 sample/src/oidc/"]
             LOGIN["oidc/login<br/>state+nonce+PKCE"]
             CB["oidc/callback<br/>交换+验签+JIT"]
@@ -79,9 +83,12 @@ flowchart TD
   不可变），JS 只见 sign/verify/jwks 接口面；手写脱敏 `Debug`，PEM/secret 不进日志。
 - **OP 对外端点说标准协议**：discovery/jwks/token/userinfo 成功用 `json.raw` 回裸 JSON
   （RFC 6749 要求 `access_token` 是顶层字段），错误仍走 `{code,msg,data}` 信封。
-- **豁免面最小**：`tenant.anonymous_paths` 只豁免「缺失租户头的 400」，且仅列出三条
-  跳转腿路径（`/oidc/*`、`/idp/*`、`/idp/.well-known/*`）；带有效租户头的请求照常注入
-  `http.tenantId`。匹配是严格一层通配（比 oj-auth 插件的多层前缀更严，深路径需显式列出）。
+- **豁免面最小**：`tenant.anonymous_paths` 只豁免「缺失租户头的 400」，且只列跳转腿路径
+  （`/oidc/*`、`/idp/**`。discovery 挂在 `/idp/.well-known/openid-configuration`，比 `/idp/*`
+  深一层，故 OP 面用 `**`）；带有效租户头的请求照常注入 `http.tenantId`。
+  匹配为通配四形态（字面 / 尾 `/*` 一层 / `*` 单段 / `**` 跨段）。**语义收紧只发生在 auth 侧**
+  （v0.1.20 把 oj-auth 的尾 `/*` 从任意深度改为严格一层）；租户侧自引入起即为严格一层，
+  故启动期迁移 WARN 只针对 `auth.anonymous_paths`（见 `docs/devkit/scenarios.md` 场景 5）。
 
 ## 2. 全链时序图
 
@@ -128,6 +135,8 @@ sequenceDiagram
     RP-->>UA: 401 invalid or expired state
 ```
 
+（JIT = Just-In-Time 建号：首次登录成功时自动在本地 users 表插入一行。）
+
 安全闸门与失效路径：
 
 | 闸门 | 失败返回 |
@@ -153,7 +162,7 @@ flowchart LR
 ```
 
 - **RP 侧**：tenant 决定用哪个 IdP。tenant 从 query 进入豁免路由，建 state 时快照进 KV，
-  后续只信快照——query 无法劫持已建立的登录流。
+  后续只信快照。query 无法劫持已建立的登录流。
 - **OP 侧**：tenant 来自 client 注册（`oidc.clients.<id>.tenant`），随 code 进入
   id_token/access_token claims。
 - **豁免边界**：只有跳转腿豁免；登录后的业务请求照常强制 `X-TENANT-ID`，与全站语义一致。
@@ -168,7 +177,7 @@ flowchart LR
 | 裸 JSON | `src/bridge/json.rs` | `json.raw(data)`——200 裸 JSON，默认 content-type，`json.header` 可覆盖 |
 | 全局挂载 | `src/bridge/bootstrap.js` | `oidc` 全局（sign/verify/jwks/issuer/rp/clients）；ASCII 纪律 |
 | 装配 | `oj/src/app.rs` | `cfg.oidc → OidcState::from_section → Extras.oidc/StableState`（构造期，fail-fast） |
-| 租户豁免 | `server/src/lib.rs` | `Pipeline.tenant_anon` + `path_matches`（严格一层通配）；run 闭包豁免缺失头 400 |
+| 租户豁免 | `server/src/lib.rs` | `Pipeline.tenant_anon` + `path_matches`（字面 / `/*` 一层 / `*` 单段 / `**` 跨段）；run 闭包豁免缺失头 400 并置 `RequestInfo.anonymous` |
 | OP | `sample/src/idp/` | discovery / jwks.json / authorize / login / token / userinfo（六端点） |
 | RP | `sample/src/oidc/` | login / callback / logout（三端点） |
 | 共享工具 | `sample/src/auth/_shared/util.ts` | redirect / nowSecs / b64uFromHex / parseForm / parseCookies（构建顺序 auth 最先） |

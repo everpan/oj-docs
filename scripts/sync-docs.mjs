@@ -70,7 +70,25 @@ const ENTRIES = [
   { src: 'docs/plans/2026-09-15-mail-smtp-impl.md', route: '/reference/mail-smtp-impl', title: '邮件投递 · 实施记录', split: true },
   { src: 'docs/oidc-integration.md', route: '/reference/oidc-integration', title: 'OIDC 接入' },
   { src: 'docs/oidc-implementation.md', route: '/reference/oidc-implementation', title: 'OIDC 实现' },
-  { src: 'docs/plugin-development.md', route: '/reference/plugin-development', title: '插件开发' },
+
+  // ---- 插件（docs/plugins/，按插件拆分的专题状态文档 + 系统级机制文档）----
+  // 源仓库在 commit 82c4206 把插件专题文档合并进 docs/plugins/ 并补全各插件状态文档。
+  { src: 'docs/plugins/README.md', route: '/reference/plugins', title: '插件索引' },
+  { src: 'docs/plugins/plugin-architecture.md', route: '/reference/plugins/plugin-architecture', title: '插件机制（架构）' },
+  { src: 'docs/plugins/plugin-development.md', route: '/reference/plugins/plugin-development', title: '插件开发' },
+  { src: 'docs/plugins/oj-auth.md', route: '/reference/plugins/oj-auth', title: 'oj-auth 插件' },
+  { src: 'docs/plugins/oj-blob-s3.md', route: '/reference/plugins/oj-blob-s3', title: 'oj-blob-s3 插件' },
+  { src: 'docs/plugins/oj-bus-kafka.md', route: '/reference/plugins/oj-bus-kafka', title: 'oj-bus-kafka 插件' },
+  { src: 'docs/plugins/oj-bus-rabbitmq.md', route: '/reference/plugins/oj-bus-rabbitmq', title: 'oj-bus-rabbitmq 插件' },
+  { src: 'docs/plugins/oj-db-mysql.md', route: '/reference/plugins/oj-db-mysql', title: 'oj-db-mysql 插件' },
+  { src: 'docs/plugins/oj-db-postgres.md', route: '/reference/plugins/oj-db-postgres', title: 'oj-db-postgres 插件' },
+  { src: 'docs/plugins/oj-es.md', route: '/reference/plugins/oj-es', title: 'oj-es 插件' },
+  { src: 'docs/plugins/oj-kv-redis.md', route: '/reference/plugins/oj-kv-redis', title: 'oj-kv-redis 插件' },
+  { src: 'docs/plugins/oj-ldap.md', route: '/reference/plugins/oj-ldap', title: 'oj-ldap 插件' },
+  { src: 'docs/plugins/oj-mail.md', route: '/reference/plugins/oj-mail', title: 'oj-mail 插件' },
+  // ldap 接入：被 oj-ldap 插件专题引用，现行有效，随插件一并收录。
+  { src: 'docs/ldap-integration.md', route: '/reference/ldap-integration', title: 'LDAP 接入' },
+
   { src: 'docs/benchmarks.md', route: '/reference/benchmarks', title: '基准测试' },
   { src: 'docs/builtin-api-auth.md', route: '/reference/builtin-api-auth', title: '内置 API 与鉴权' },
 
@@ -139,7 +157,6 @@ const EXCLUDED = new Set([
   'docs/review-2026-09-02.md',
   'docs/review-2026-09-06.md',
   'docs/route-params-design.md',
-  'docs/plugin-architecture.md',
   'docs/cli2.md',
 ]);
 
@@ -156,6 +173,10 @@ function resolveLink(srcFile, target) {
   if (EXCLUDED.has(abs) || abs.startsWith('docs/archive/') || abs.startsWith('docs/superpowers/')) {
     return '/appendix/history-index';
   }
+  // 兜底：裸文件名（无目录分量）在错误目录下对不上，按文件名再试一次
+  // （见 ROUTES_BY_BASENAME 说明；插件文档引用 docs/ 根的文档时常见）。
+  const base = clean.split('/').pop();
+  if (base && ROUTES_BY_BASENAME.has(base)) return ROUTES_BY_BASENAME.get(base);
   return null;
 }
 
@@ -363,6 +384,19 @@ for (const e of ENTRIES) {
   const stem = e.src.replace(/\.md$/i, '').split('/').pop();
   if (stem) WIKIS.set(stem, route);
 }
+
+/**
+ * 文件名 → 路由 兜底表。源文档若用「裸文件名」（无目录分量）引用某篇文档，
+ * 但相对基准算错了目录（典型：docs/plugins/ 下的文档引用 docs/ 根的文件，
+ * 如 `dev-guide.md` 而非 `../dev-guide.md`），精确路径对不上 ROUTES 时，
+ * 再按文件名匹配一次。同名文件（如多个 README.md）不进此表，避免误匹配。
+ */
+const ROUTES_BY_BASENAME = new Map();
+for (const [src, route] of ROUTES) {
+  const base = src.split('/').pop();
+  if (base && !ROUTES_BY_BASENAME.has(base)) ROUTES_BY_BASENAME.set(base, route);
+}
+
 
 // ---------------------------------------------------------------- 主流程
 

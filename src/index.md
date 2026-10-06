@@ -44,7 +44,7 @@ features:
 |---|---|
 | 第一次听说 oj | [这是什么](./guide/01-what-is-oj.md) → [构建与运行](./guide/02-install-build.md) → [第一个接口](./guide/03-first-api.md) |
 | 要写业务接口 | [模块解剖](./guide/04-module-anatomy.md) → [全局对象速查](./guide/05-globals-tour.md) → [JS API 手册](./reference/api-manual/index.md) |
-| 要改 oj 本身 | [内部实现走读](./guide/11-internals.md) → [模块地图](./modules/index.md) → [插件开发](./reference/plugin-development.md) |
+| 要改 oj 本身 | [内部实现走读](./guide/11-internals.md) → [模块地图](./modules/index.md) → [插件开发](./reference/plugins/plugin-development.md) |
 | 要写前端框架 / 业务模块 | [框架开发手册](./frontend/framework-dev-guide/index.md) → [全栈实战演练](./frontend/fullstack-tutorial/index.md) → [业务模块开发手册](./frontend/module-dev-guide/index.md) |
 
 ## 最常被问的三件事

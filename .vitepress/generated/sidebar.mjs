@@ -26,7 +26,7 @@ export const splitNav = {
       "link": "/reference/dev-guide/06"
     },
     {
-      "text": "7. 模块加载与热重载（oj server）",
+      "text": "7. 模块加载与热重载（oj serve）",
       "link": "/reference/dev-guide/07"
     },
     {
@@ -112,7 +112,7 @@ export const splitNav = {
       "link": "/reference/user-manual/11"
     },
     {
-      "text": "12. 已知限制（v0.2）",
+      "text": "12. 已知限制",
       "link": "/reference/user-manual/12"
     }
   ],

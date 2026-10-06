@@ -1,29 +1,30 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/ops-manual.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/ops-manual.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 运维手册
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/ops-manual.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/ops-manual.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
-# oj server 运维手册
+# oj serve 运维手册
 
-面向部署、发布、排障。功能面见 `docs/user-manual.md`，实现面见 `docs/dev-guide.md`，
-模块数据层与迁移运维见 `docs/migration.md`。
+**给谁读**：负责部署、发布、排障的人——拿到一台服务器之后照这本走。功能怎么配见
+`docs/user-manual.md`，实现细节见 `docs/dev-guide.md`，模块数据层与迁移运维见
+`docs/migration.md`。
 
 ## 1. 构建与发布
 
 ```bash
-cargo build --release
-ls -lh target/release/oj          # 独立二进制，无运行时依赖（deno_core 内嵌）
+cargo xtask build          # release 构建，产物归置 bin/oj + bin/plugins/<triple>/（独立二进制，deno_core 内嵌）
 ```
 
-发布物 = `target/release/oj` + 项目目录（`dist/` + `config.yaml` + `seed.sql` + `node_modules/`）。
+发布物 = `bin/oj` + `bin/plugins/<triple>/` + 项目目录（`dist/` + `config.yaml` + `seed.sql` + `node_modules/`）。
 
 发布流程：
-1. `cargo build --release`（确认 debug/release 双绿）。
+1. `cargo xtask build`——构建 `bin/oj` 和全部第一方插件（本仓库只支持 release 构建，
+   debug 不在支持范围）。
 2. `oj build -d src -o dist`（无参 = 全部模块）——生成各模块版本目录
    `dist/<module>-<version>/`（产物保留 src 目录结构与原名，如 `account/api.js`，
    默认 minify 成单行）、锁文件 `dist/manifests.yaml` 与确定性发布包
@@ -33,9 +34,12 @@ ls -lh target/release/oj          # 独立二进制，无运行时依赖（deno_
 3. `oj migrate -c config.yaml -d dist`——应用各模块 `migrations/*.sql` 并按 `schema.yaml`
    收敛（release 默认 `migrate_on_start: verify` 门禁要求账本不落后，**先迁移后启动**）；
    存量库接入用 `--baseline`。发布前可跑 `oj schema diff` 做声明 vs 实库对账（漂移 exit 1）。
-4. 打包 `oj` 二进制 + `dist/` + `config.yaml` + `seed.sql`（可选）+ vendored
-   `node_modules/`（裸 specifier 运行时解析依赖它，**不打进 tgz**）。
-5. 目标机解包，`./oj server -c config.yaml --api-path dist`（dist 含 `manifests.yaml` → 自动 release 跑 `.js`）。
+   **多库部署**：上面两条默认只作用 `db.default`，非 default 的命名库须加 `--db <profile>`
+   逐库各跑一遍（未声明的库名 fail-fast；见 `migration.md` §3.8）。
+4. 打包 `bin/oj` + `bin/plugins/<triple>/` + `dist/` + `config.yaml` + `seed.sql`（可选）+
+   vendored `node_modules/`（裸 specifier 运行时解析依赖它，**不打进 tgz**）。
+5. 目标机解包，`./oj serve -c config.yaml --api-path dist`（dist 含 `manifests.yaml` → 自动 release 跑 `.js`）。
+   插件发现走 `<exe>/plugins/<triple>/`，保持 `bin/` 的相对布局拷过去即可，无需额外配置。
 
 ### 1.1 npm 分发（`@oj-bin/*`）
 
@@ -85,22 +89,22 @@ bash scripts/npm-publish.sh v0.1.13             # 真发（幂等，已发布的
 ## 2. 运行
 
 ```bash
-./oj server -c config.yaml --api-path dist            # release
-./oj server -c config.yaml --api-path src              # dev（无 manifests.yaml 自动判定；跑 .ts，改文件即生效）
+./oj serve -c config.yaml --api-path dist            # release
+./oj serve -c config.yaml --api-path src              # dev（无 manifests.yaml 自动判定；跑 .ts，改文件即生效）
 ```
 
 启动时把模块清单 + 路由表写入日志，可据此核对发布是否完整。
 
 ```bash
 tail -f logs/server-*.log     # 默认：日志只落盘，终端静默
-./oj server -c config.yaml --api-path dist --console-log   # 终端也输出
+./oj serve -c config.yaml --api-path dist --console-log   # 终端也输出
 ```
 
 后台运行（无 systemd/supervisor 时的轻量守护）：
 
 ```bash
-./oj server -c config.yaml --api-path dist --daemon
-# → oj server daemonized (pid 12345)；父进程即退，子进程脱离终端继续跑
+./oj serve -c config.yaml --api-path dist --daemon
+# → oj serve daemonized (pid 12345)；父进程即退，子进程脱离终端继续跑
 kill 12345                       # 停机：SIGTERM 走优雅停机（排空在途请求与任务）
 ```
 
@@ -110,6 +114,22 @@ kill 12345                       # 停机：SIGTERM 走优雅停机（排空在�
 日志级别另由 `RUST_LOG` 环境变量控制（如 `RUST_LOG=oj=debug`），配置里不能配。
 落盘基于 fd 重定向，**仅 unix**：Windows 上不写日志文件，终端输出强制保留并告警。
 **例外**：启动失败的最终退出原因总是直写终端（console 关闭也不例外），便于立即调整。
+
+### 2.1 `oj exec`（v0.1.29）：直接跑脚本
+
+```bash
+./oj exec scripts/fix-roles.ts -c config.yaml -- --dry-run   # -- 后 argv 注入脚本 args
+./oj exec scripts/fix-roles.ts -c config.yaml --log-file fix.jsonl
+```
+
+一次性数据修复/对账/批处理用。**迁移默认 off 是与 server dev 相反的缺省**——
+server dev 不写 `migrate_on_start` 时缺省 `auto`（启动即应用迁移），`oj exec` 同样
+不写时**全跳过**（apply/verify/reconcile 都不做），仅 config 显式写
+`migrate_on_start: auto|verify` 才执行。拿 server 直觉套 exec 之前先核对这个开关。
+其他差异：无证书门禁；无请求超时/KillSwitch（同步死循环 Ctrl-C 兜底，**不适合
+生产常驻**——常驻任务放 `src/tasks/` 任务池）；`sql_guard: "deny"` 库上脚本须
+`db.asSystem()`；stdout 只有脚本输出（装配日志走 stderr），可安全管道/重定向。
+专题手册：`docs/exec-integration.md`。
 
 ## 3. 配置管理
 
@@ -198,7 +218,7 @@ kill 12345                       # 停机：SIGTERM 走优雅停机（排空在�
 生产建议用 `RUST_LOG` 控制级别：
 
 ```bash
-RUST_LOG=oj=info ./oj server -c config.yaml --api-path dist
+RUST_LOG=oj=info ./oj serve -c config.yaml --api-path dist
 ```
 
 ## 7. 排障表
@@ -214,7 +234,7 @@ RUST_LOG=oj=info ./oj server -c config.yaml --api-path dist
 | 启动报 `api path not found: …` | `--api-path` 指定的目录不存在 | 改路径或建目录；两者皆指定时必须都存在（准入门三态） |
 | 启动报 `static site dir not found: …` | 指定了静态根但目录不存在 | 建目录或改路径 |
 | 启动报 `neither api path … specified` | `--api-path` 与静态站点皆未指定（server 无 src/dist 自动搜索兜底） | 显式指定其一：`--api-path` 或 `server.app_path` / `--app-path` |
-| 静态文件 404 | 文件不存在 / 目录缺 `index.html` / 非 GET/HEAD / 无 SPA 回退（v0.1） | 核对文件；SPA 场景先经前置反代补写回退 |
+| 静态文件 404 | 文件不存在 / 目录缺 `index.html` / 非 GET/HEAD / **未开** `server.app_spa_fallback`（SPA 深链默认不回落，v0.1.20） | 核对文件；SPA 站点显式开 `server.app_spa_fallback: true`（`api_prefix` 下的 404 仍 404）；或在反代层做回落 |
 | 405 `method 'del' not exported` | `DELETE` 请求但 handler 没导出 `del`（不是 `delete`） | 改导出名 |
 | 500 信封含 `api.ts` 字样 | TS 编译/解析错误 | 看 msg 定位行号 |
 | 408 | handler 死循环/超时 | 查死循环，或调大 `server.timeout` |
@@ -263,6 +283,7 @@ RUST_LOG=oj=info ./oj server -c config.yaml --api-path dist
 | 启动报 `certificate is mandatory … public_key_path is required` / `… certificate_path is required` | 仅配了 `public_key_path` 或 `certificate_path` 之一（缺任一门禁即拒绝，无部分配置状态） | 两个路径都配齐 |
 | 启动报 `M004: 模块 … 有 N 个待应用迁移 … verify 模式拒启` | release 默认 `migrate_on_start: verify`，迁移账本 `_oj_migrations（module 列区分模块）` 落后于 dist 内迁移文件 | 先 `oj migrate -c config.yaml -d dist` 再启动；`off` 是逃生门（迁移归运维，不推荐常态） |
 | `oj schema diff` 报 D001/D002 退出 1 | 声明（schema.yaml）与实库漂移——手工改库、漏迁移、删除列未走迁移 | 按 diff 报告逐条补迁移或修正声明；发布前跑一次作巡检 |
+| `oj migrate` / `test fixture` / `schema diff` 报 `--db "x" not declared in config (db keys: […])` | `--db` 给的 profile 不在 config `db:` 段；工具**不回落** default（防迁错库） | 核对 `db:` 段的键名拼写；多库部署逐 profile 各跑一遍 |
 | 启动/build 报 `S002–S006` | 结构检查违规：表归属冲突（S002）、跨模块表未声明 deps（S003）、deps 版本不满足（S004）、tables 与 schema.yaml 不一致（S005）、seed 纪律（S006） | 按报错「下一步」修复；只查不落盘用 `oj build --check` |
 
 ## 8. 回滚与恢复

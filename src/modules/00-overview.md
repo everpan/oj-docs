@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/00-overview.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/00-overview.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 00 · 总览
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/00-overview.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/00-overview.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 00 · 总览：分层、依赖与红线
@@ -20,9 +20,9 @@ generated: 2026-09-18
 |---|---|---|
 | `.`（`only-js`） | lib | 核心：JS↔Rust bridge + 各后端轴 + 配置模型 |
 | `server` | lib | axum HTTP 服务（feature `test-support` 供测试复用） |
-| `oj` | lib + bin | CLI（`server`/`build`/`test`/`migrate`/`fixture`/`schema diff`）；bin+lib 双 target 便于 `oj/tests/` 触达装配层 |
-| `oj-plugin-ffi` | lib | 宿主与插件共享的 C-ABI 契约（`ABI_VERSION = 7`） |
-| `plugins/oj-*`（8 个） | cdylib | es / db-mysql / db-postgres / blob-s3 / bus-kafka / bus-rabbitmq / kv-redis / auth |
+| `oj` | lib + bin | CLI（`serve`/`build`/`test`（含 `test fixture` 子命令）/`migrate`/`schema diff`/`secret`（keygen/seal/open）/`exec`/`openapi`）；bin+lib 双 target 便于 `oj/tests/` 触达装配层 |
+| `oj-plugin-ffi` | lib | 宿主与插件共享的 C-ABI 契约（`ABI_VERSION = 11`） |
+| `plugins/oj-*`（10 个） | cdylib | es / db-mysql / db-postgres / blob-s3 / bus-kafka / bus-rabbitmq / kv-redis / auth / mail / ldap |
 | `tools/xtask` | bin | 构建/拷贝/预检，产物归置到 `bin/` |
 | `tools/oj-cert` | lib + bin | JWS 证书生成/续签工具 |
 | `tests/plugins/mini`、`mini-kv` | cdylib | 加载/ABI/panic 路径的测试夹具 |
@@ -62,7 +62,7 @@ generated: 2026-09-18
 6. 静态站点兜底（`server.app_path`，GET/HEAD，带穿越防护）。
 7. `run(file, params)` 前置管线：
    - **鉴权** `AuthGuard::verify(path, header)` → 失败 401，匿名放行 `Ok(None)`；
-   - **租户** 缺失/空 → 400（`tenant.anonymous_paths` 一层通配豁免）；
+   - **租户** 缺失/空 → 400（`tenant.anonymous_paths` 通配豁免：字面 / `/*` 一层 / `*` 单段 / `**` 跨段）；
    - **体积** 超 `max_upload` → 413；
    - **multipart** 解析为文本字段 + `Vec<UploadedFile>`；
    - 组装 `RequestInfo { method, params, query, headers, body, tenant_id, user, files }`。
@@ -101,7 +101,7 @@ generated: 2026-09-18
 ## 6. dev / release 双模式
 
 判据唯一：服务目录含 `dist/manifests.yaml` → release（跑预构建 JS，不转译，按锁聚合）；
-否则 dev（服务 `src`，按需转译 TS，`notify` 热重载）。见 `oj/src/server_cmd.rs:105`。
+否则 dev（服务 `src`，按需转译 TS，`notify` 热重载）。见 `oj/src/serve_cmd.rs:105`。
 
 | 维度 | dev | release |
 |---|---|---|
@@ -122,4 +122,4 @@ generated: 2026-09-18
 | 改构建产物 | `oj/src/build_cmd.rs`、`pack.rs`、`manifest.rs` |
 | 改迁移/种子/schema | `oj/src/migrate.rs`、`seed.rs`、`schema.rs`、`checks.rs` |
 | 改测试运行器 | `oj/src/test_cmd.rs`、`oj/src/test_ext.rs`、`oj/src/test_ext/test_bootstrap.js` |
-| 跑 sample 测试（L1/L2） | `cd sample && npm run test`（= `test:unit` + `test:api`），判据见 [08-testing.md](/modules/08-testing) |
+| 跑 sample 测试（L1/L2 + 类型） | `cd sample && npm run test`（= `typecheck` + `test:unit` + `test:api`），判据见 [08-testing.md](/modules/08-testing) |

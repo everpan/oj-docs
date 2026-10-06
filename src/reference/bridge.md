@@ -1,16 +1,18 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: bridge 与全局对象
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # bridge —— deno_core JS SDK 桥接模块
 
-向 V8 JsRuntime 注入 JS SDK 全局对象，供 JS handler 编写业务逻辑，Rust 侧捕获统一信封响应。
+向 V8 JsRuntime 注入 JS SDK 全局对象（`json`/`db`/`http` 等），供 JS handler 写业务逻辑，Rust 侧捕获统一信封响应。
+
+**给谁读**：想搞清楚「handler 里的 `db`/`json` 从哪来、JS 调用怎么跨进 Rust」的开发者。只想查 handler API 用法的，直接去 `devkit/api-manual.md`。
 
 ## 架构
 
@@ -242,7 +244,9 @@ cargo build --benches && cargo bench   # criterion 性能测试（含吞吐统�
 json.ok 230 ns，db.query 413 ns，fetch 本地回环复用连接 30 µs/req（33.7 K/s）。
 详见 [benchmarks.md](/reference/benchmarks)（含优化前后对比与根因分析）。
 
-## deno_core 0.410 移植要点
+## deno_core 0.410/0.411 移植要点
+
+（当前依赖解析到 0.411.0，下列结论不变。）
 
 - `#[op2]` 无 `(async)` 标志，`async fn` 自动识别。
 - `#[serde]` 位置须写全限定 `serde_json::Value`；`Option<String>` 参数用 `#[string]`。

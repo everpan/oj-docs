@@ -1,14 +1,17 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/builtin-api-auth.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/builtin-api-auth.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 内置 API 与鉴权
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/builtin-api-auth.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/builtin-api-auth.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 内置 API 与鉴权逻辑（新人向）
+
+> 给谁读：刚接触 oj、想弄清楚「哪些端点是框架直接处理的、登录鉴权是怎么走的」的新人。
+> 读完这篇你就知道一个请求从进来到执行 JS handler 之间发生了什么。
 
 本文梳理 `only-js` 服务层**内置接口**（不走业务路由表、由 Rust 直接处理的端点）及
 auth 鉴权全链路。代码依据：`server/src/lib.rs` 的 `handle()`、`src/bridge/auth.rs`
@@ -31,7 +34,7 @@ auth 鉴权全链路。代码依据：`server/src/lib.rs` 的 `handle()`、`src/
 > `{base}/plugins` 是**保留路径**：内置路由先于路由表匹配，会遮蔽同名业务路由
 > （业务模块不要占用 `plugins` 目录名）。
 
-`{base}/auth/login|refresh|logout` **不再是内置路由**：它们是普通业务路由，由 JS 模块
+`{base}/auth/login|refresh|logout` **不再是内置路由**。它们是普通业务路由，由 JS 模块
 `sample/src/auth/` 实现（`db` 查用户表、`bcrypt.verify` 校验、`jwt` 原语签发双 token），
 鉴权则由 `oj-auth` 插件守卫在前置管线完成（验签 + `anonymous_paths` 匹配）。auth 端点
 自身须在 `auth.anonymous_paths` 里显式匿名（如 `/auth/login`）。
@@ -134,7 +137,7 @@ flowchart TD
     F --> Z
 ```
 
-匿名路径匹配规则（oj-auth 插件内）：精确匹配，或尾部 `/*` 做**一层**前缀通配——
+匿名路径匹配规则（oj-auth 插件内）：精确匹配，或尾部 `/*` 做**一层**前缀通配。
 `/pub/*` 命中 `/pub/x`，不命中 `/pub` 本身。宿主通过 `AuthGuard` trait（`src/bridge/auth.rs`）
 以 FFI 调用插件，返回 `http.user`（JSON）或错误串。
 
@@ -162,4 +165,4 @@ flowchart TD
 | `signing_method` | `HS256` | HS256 / HS384 / HS512 |
 | `access_token_duration` | `60s` | access token 有效期 |
 | `refresh_token_duration` | `720h` | refresh token / session 有效期 |
-| `anonymous_paths` | `[]` | 免鉴权路径（去 base 后），尾部 `/*` 一层通配 |
+| `anonymous_paths` | `[]` | 免鉴权路径（去 base 后），通配四形态（v0.1.20）：字面 / 尾 `/*` 严格一层 / 中段 `*` 一段 / `**` 跨段。条目可写成对象 `{ path, one_layer: true }` 显式确认「有意一层」以退出迁移 WARN（v0.1.23） |

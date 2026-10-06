@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-09-18 从 `oj-bin:docs/modules/07-data-layer.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/07-data-layer.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 07 · 模块数据层
-generated: 2026-09-18
+generated: 2026-10-06
 ---
 
-<p class="gen-note">generated: 2026-09-18 · 本页由脚本从 oj-bin:docs/modules/07-data-layer.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/07-data-layer.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 07 · 模块数据层（`oj/src/{manifest,schema,migrate,seed,checks}.rs`）
@@ -82,7 +82,7 @@ db: default         # 可选：模块的 "default" 库重定向到该命名库
 - **S002**：同一张表被两处 `CREATE TABLE` → 启动 fail-fast，不静默合并。
   `create_tables`（:44）识别 `IF NOT EXISTS`、引号（`"t"`/`` `t` ``/`[t]`）与 schema 限定。
 - 先全量冲突检查再执行 —— 失败不落任何副作用。
-- `fixtures/` **不重放**（演示数据，由 `oj fixture` / `oj test` 灌入）。
+- `fixtures/` **不重放**（演示数据，由 `oj test fixture` / `oj test` 灌入）。
 - 无任何种子文件 → 静默返回；有种子但 default 库缺失/非 sqlite → warn 跳过。
 
 ## 5. `checks.rs` —— 结构层静态检查（§5.1）

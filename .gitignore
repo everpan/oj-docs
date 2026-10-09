@@ -1,7 +1,7 @@
 node_modules/
 .vitepress/cache/
 .vitepress/dist/
-
+.vitepress/*.tgz
 # src/reference/、src/modules/、src/frontend/、src/sample/、.vitepress/generated/
 # 是 scripts/sync-docs.mjs 的生成产物，【已入库】—— 站点自包含，克隆即可
 # pnpm install && pnpm run build，不依赖 ../only-js 与 ../oj-module

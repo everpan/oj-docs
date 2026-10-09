@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "only-js (oj) 开发者手册站点",
-  "packageManager": "pnpm@11.25.0",
+  "packageManager": "pnpm@12.9.1",
   "engines": {
     "pnpm": ">=10"
   },

@@ -149,6 +149,38 @@ export default withMermaid(defineConfig({
         ],
       },
       {
+        text: '后端 · API 专题',
+        items: [
+          { text: 'API 文档索引', link: '/reference/api' },
+          { text: '数值边界', link: '/reference/numeric-limits' },
+          {
+            text: '按全局对象',
+            collapsed: true,
+            items: [
+              { text: 'json / finish', link: '/reference/api/01-json' },
+              { text: 'http', link: '/reference/api/02-http' },
+              { text: 'log', link: '/reference/api/03-log' },
+              { text: 'vars', link: '/reference/api/04-vars' },
+              { text: 'plugins', link: '/reference/api/05-plugins' },
+              { text: 'db / DB(name)', link: '/reference/api/06-db' },
+              { text: 'kv / redis', link: '/reference/api/07-kv' },
+              { text: 'blob', link: '/reference/api/08-blob' },
+              { text: 'bus', link: '/reference/api/09-bus' },
+              { text: 'Kafka / RabbitMQ', link: '/reference/api/10-mq' },
+              { text: 'es', link: '/reference/api/11-es' },
+              { text: 'mail', link: '/reference/api/12-mail' },
+              { text: 'ldap', link: '/reference/api/13-ldap' },
+              { text: 'ws / WebSocket', link: '/reference/api/14-ws' },
+              { text: 'tasks', link: '/reference/api/15-tasks' },
+              { text: 'jwt / bcrypt / crypto', link: '/reference/api/16-crypto' },
+              { text: 'cert', link: '/reference/api/17-cert' },
+              { text: 'oidc', link: '/reference/api/18-oidc' },
+              { text: 'fs', link: '/reference/api/19-fs' },
+            ],
+          },
+        ],
+      },
+      {
         text: '后端 · 插件',
         items: [
           { text: '插件索引', link: '/reference/plugins' },

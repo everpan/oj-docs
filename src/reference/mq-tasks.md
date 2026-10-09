@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/mq-tasks.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/mq-tasks.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: MQ 与长任务
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/mq-tasks.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/mq-tasks.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # MQ 消费任务教学（Kafka/RabbitMQ 命名客户端 + tasks 长任务池）

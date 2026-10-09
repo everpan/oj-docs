@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:sample/src/upload/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:sample/src/upload/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: upload 模块
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:sample/src/upload/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:sample/src/upload/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # upload — 文件上传 + blob 下载

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/builtin-api-auth.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/builtin-api-auth.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 内置 API 与鉴权
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/builtin-api-auth.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/builtin-api-auth.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 内置 API 与鉴权逻辑（新人向）
@@ -14,7 +14,7 @@ generated: 2026-10-06
 > 读完这篇你就知道一个请求从进来到执行 JS handler 之间发生了什么。
 
 本文梳理 `only-js` 服务层**内置接口**（不走业务路由表、由 Rust 直接处理的端点）及
-auth 鉴权全链路。代码依据：`server/src/lib.rs` 的 `handle()`、`src/bridge/auth.rs`
+auth 鉴权全链路。代码依据：`serve/src/lib.rs` 的 `handle()`、`src/bridge/auth.rs`
 （`AuthGuard` trait）、`plugins/oj-auth`（守卫插件）、`sample/src/auth/`（JS 端点）、
 `src/config.rs`。
 

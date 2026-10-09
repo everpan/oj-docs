@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/06-toolchain.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/modules/06-toolchain.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 06 · 工具链
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/06-toolchain.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/modules/06-toolchain.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 06 · 工具链与辅助 crate（`tools/`、`benches/`、`tests/plugins/`）
@@ -52,7 +52,7 @@ oj-cert renew -k <private.pem> [-o <dir>] [--days 365] [--exp <unix>]
 - `--days` 是**有效天数**（`days_to_expiry = days * 86400`），避免把天数误当秒。
 - `gen` 是 edition 2024 保留字，公开名仍是 `gen`，定义写作 `r#gen`。
 - `renew` 只写新 `cert.jws`（公钥不变）→ 配合 server 证书热重载免重启续期。
-- 与 `server/src/certificate.rs` 契约一致：`header {"alg":"RS256","typ":"JWT"}` +
+- 与 `serve/src/certificate.rs` 契约一致：`header {"alg":"RS256","typ":"JWT"}` +
   payload `{nbf, exp}` + RS256。
 - 测试 `tools/oj-cert/tests/cert_gen.rs`：用 rsa 独立解码 + 验签（与生成路径不对称，
   可捕格式错误），含拒绝覆盖已存在私钥、`renew` 拒绝非法 exp 等负路径。

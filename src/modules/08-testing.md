@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/modules/08-testing.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/modules/08-testing.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 08 · 测试体系
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/modules/08-testing.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/modules/08-testing.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 08 · 测试分类与 `sample/test` vs `sample/tests` 处置方案

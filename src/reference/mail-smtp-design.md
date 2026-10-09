@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/plans/2026-09-15-mail-smtp-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/plans/2026-09-15-mail-smtp-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 邮件投递 · 设计记录
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/plans/2026-09-15-mail-smtp-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/plans/2026-09-15-mail-smtp-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 设计文档：lettre SMTP 绑定（v0.1.19，插件实现）

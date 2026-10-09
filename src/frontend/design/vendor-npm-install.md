@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-module:docs/prd/202609111926-vendor-npm-install-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-module:docs/prd/202609111926-vendor-npm-install-design.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: vendor npm 改造
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-module:docs/prd/202609111926-vendor-npm-install-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-module:docs/prd/202609111926-vendor-npm-install-design.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # ojm vendor 改造：下载源从 GitHub releases 切换为 npm 包 @oj-bin/oj

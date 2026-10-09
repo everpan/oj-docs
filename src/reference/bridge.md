@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/bridge.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: bridge 与全局对象
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/bridge.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # bridge —— deno_core JS SDK 桥接模块
@@ -52,7 +52,7 @@ generated: 2026-10-06
 ```js
 json.ok(data)              // {code:0, msg:"ok", data} → status 200，标记会话完成
 json.fail(code, msg, data) // code<=0 映射 500
-json.header(name, value)   // 设置返回头（覆盖语义），空名忽略
+json.header(name, value)   // 追加返回头（有序、同名可重复，v0.1.46），空名忽略
 json.raw(data)             // 裸 JSON 200（无信封外壳），标准协议端点用（OP discovery/token 等）
 ```
 

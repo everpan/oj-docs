@@ -92,6 +92,31 @@ const ENTRIES = [
   { src: 'docs/benchmarks.md', route: '/reference/benchmarks', title: '基准测试' },
   { src: 'docs/builtin-api-auth.md', route: '/reference/builtin-api-auth', title: '内置 API 与鉴权' },
 
+  // ---- API 专题（docs/api/，按 bridge 全局对象逐一梳理的 handler 侧 API 文档）----
+  // 源仓库在 commit fbc40c8 新增 docs/api/ 全量 API 文档（19 篇）；权威参考仍是 devkit/api-manual，
+  // 本专题按全局对象拆分、配场景化案例，与 api-manual 对齐。README 引用 numeric-limits，一并收录。
+  { src: 'docs/api/README.md', route: '/reference/api', title: 'API 文档索引' },
+  { src: 'docs/api/01-json.md', route: '/reference/api/01-json', title: 'json / finish' },
+  { src: 'docs/api/02-http.md', route: '/reference/api/02-http', title: 'http' },
+  { src: 'docs/api/03-log.md', route: '/reference/api/03-log', title: 'log' },
+  { src: 'docs/api/04-vars.md', route: '/reference/api/04-vars', title: 'vars' },
+  { src: 'docs/api/05-plugins.md', route: '/reference/api/05-plugins', title: 'plugins' },
+  { src: 'docs/api/06-db.md', route: '/reference/api/06-db', title: 'db / DB(name)' },
+  { src: 'docs/api/07-kv.md', route: '/reference/api/07-kv', title: 'kv / redis' },
+  { src: 'docs/api/08-blob.md', route: '/reference/api/08-blob', title: 'blob' },
+  { src: 'docs/api/09-bus.md', route: '/reference/api/09-bus', title: 'bus' },
+  { src: 'docs/api/10-mq.md', route: '/reference/api/10-mq', title: 'Kafka / RabbitMQ' },
+  { src: 'docs/api/11-es.md', route: '/reference/api/11-es', title: 'es' },
+  { src: 'docs/api/12-mail.md', route: '/reference/api/12-mail', title: 'mail' },
+  { src: 'docs/api/13-ldap.md', route: '/reference/api/13-ldap', title: 'ldap' },
+  { src: 'docs/api/14-ws.md', route: '/reference/api/14-ws', title: 'ws / WebSocket' },
+  { src: 'docs/api/15-tasks.md', route: '/reference/api/15-tasks', title: 'tasks' },
+  { src: 'docs/api/16-crypto.md', route: '/reference/api/16-crypto', title: 'jwt / bcrypt / crypto' },
+  { src: 'docs/api/17-cert.md', route: '/reference/api/17-cert', title: 'cert' },
+  { src: 'docs/api/18-oidc.md', route: '/reference/api/18-oidc', title: 'oidc' },
+  { src: 'docs/api/19-fs.md', route: '/reference/api/19-fs', title: 'fs' },
+  { src: 'docs/numeric-limits.md', route: '/reference/numeric-limits', title: '数值边界' },
+
   // ---- JS 业务开发者手册（devkit，随发行包交付）----
   { src: 'docs/devkit/api-manual.md', route: '/reference/api-manual', title: 'JS API 手册', split: true },
   { src: 'docs/devkit/SKILL.md', route: '/reference/devkit-skill', title: 'oj 开发 skill' },

@@ -1,11 +1,11 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/plugins/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/plugins/README.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 title: 插件索引
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/plugins/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/plugins/README.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # 插件状态文档索引
@@ -26,3 +26,5 @@ AXES 共 9 个：es / db / blob / bus / kv / auth / mq / mail / ldap。
 | [oj-kv-redis](/reference/plugins/oj-kv-redis) | kv | `redis:` | 已随发行包发布（较早合入） | [oj-kv-redis.md](/reference/plugins/oj-kv-redis) |
 | [oj-ldap](/reference/plugins/oj-ldap) | ldap | `ldap:` | 首版可用（v0.1.28 起）；随发行包发布 | [oj-ldap.md](/reference/plugins/oj-ldap) |
 | [oj-mail](/reference/plugins/oj-mail) | mail | `smtp:`（或 `plugins.mail` 透传） | 首版可用（v0.1.19 起）；随发行包发布 | [oj-mail.md](/reference/plugins/oj-mail) |
+
+> `fs` 轴（核心内置，非插件）的文档已移至 [`../api/19-fs.md`](/reference/api/19-fs)。

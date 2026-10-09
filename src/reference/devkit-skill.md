@@ -1,13 +1,13 @@
-<!-- 由 scripts/sync-docs.mjs 于 2026-10-06 从 `oj-bin:docs/devkit/SKILL.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
+<!-- 由 scripts/sync-docs.mjs 于 2026-10-09 从 `oj-bin:docs/devkit/SKILL.md` 生成，请勿直接编辑；改源文件后运行 `npm run sync` -->
 
 ---
 name: oj-api-dev
 description: 在 oj (only-js) 框架业务项目中开发 API 模块时使用——新增或修改 api.ts / ws.ts handler、manifest.yaml、模块测试，或排查路由/信封/鉴权/租户行为时。触发场景：写 handler、建模块、目录镜像路由、.route 参数路由、json 信封、db 查询、多源资源选择（`--db/--redis/--blob/--es/--broker/--kafka/--rabbit` 选 profile，v0.1.34）、多库迁移与对账、Kafka/RabbitMQ 消费任务、tasks 长任务、oj test。
 title: oj 开发 skill
-generated: 2026-10-06
+generated: 2026-10-09
 ---
 
-<p class="gen-note">generated: 2026-10-06 · 本页由脚本从 oj-bin:docs/devkit/SKILL.md 同步生成，修改请改源文件后运行 npm run sync。</p>
+<p class="gen-note">generated: 2026-10-09 · 本页由脚本从 oj-bin:docs/devkit/SKILL.md 同步生成，修改请改源文件后运行 npm run sync。</p>
 
 
 # oj API 模块开发
@@ -105,9 +105,13 @@ oj（only-js）是一个低代码后端框架：你用 JS/TS 写 handler，框�
 | 裸 import 报 `Package subpath 'x' is not defined by "exports"` | v0.1.30 起有 `exports` 即封闭语义（Node 一致）：未命中的子路径**不回落** `main`/`module`——检查包的真实导出键，或该包确未导出此子路径 |
 | CJS `require("path")` 报 `Node builtin 'path' is not available in oj runtime` | Node 内建不可用——找该包的浏览器/wasm 构建（与 wasm 引擎包同款约定） |
 | `blob.uploadUrl` 报 `local blob backend has no upload presign` | local 后端无预签名——s3 才返回预签名 URL；local 用直传路由 `PUT {base}/blob/{key}`（记得带鉴权头） |
+| `oj test fixture` 报非幂等 INSERT | fixtures 须幂等写法（`INSERT OR IGNORE` / `ON CONFLICT DO NOTHING`，判据同 S006；v0.1.52 门禁）——改成幂等写法即可重复灌 |
+| 子目录里的 `*.test.ts` 没被执行 | v0.1.52 起 `oj test` 递归扫 `tests/`（`_` 前缀目录跳过）——此前只扫首层是静默忽略；升级后注意子目录测试会开始跑 |
+| `ws.broadcast` 传对象直接报错 | v0.1.52 起 data 与 `ws.send` 对称：只收 string / ArrayBuffer / Uint8Array，其余报错（此前会发 `"[object Object]"` 垃圾帧） |
 | `route_timeouts` 配了不生效 | pattern 匹配**含 base 全路径**（如 `/v1/api/convert/**`），且按声明序首个命中——诊断时先核对全路径与顺序 |
 | `{id}.json` 路由没建 | matchit 参数段不得混字面，拆成静态多段 |
 | es/blob 调用报错 | config 未配置 `es.endpoint` / `blob:` 段，配置即启用 |
+| `fs.*` 报 `NotCapable` | 未配置 `fs:` 段（fail-closed，启用即写 `fs: {root: ./data}`）、路径越出 `fs.root`、或 readonly 下调用写 API |
 | `ldap.bind` 一直抛而不是返回 false | 抛 = 连接/协议错；只有 LDAP 拒绝凭据（rc≠0，含 49）才返回 `false`——检查网络/`url`/服务账号，别把 `false` 分支当异常路径 |
 | `ldap.search` 报 size limit | 服务端返回上限（AD 默认 1000 条）——换 `ldap.searchPaged` |
 | ldap 查询结果对不上 | `scope` 默认 `sub`（整棵子树）；只查下一层要显式 `scope: "one"`；`filter` 记得 RFC 4515 转义用户输入 |
@@ -118,6 +122,9 @@ oj（only-js）是一个低代码后端框架：你用 JS/TS 写 handler，框�
 | WS 连上但收不到广播 | 订阅只在 WS 会话内有效（`bus.subscribe` 在 HTTP 路径报错）；release 下 URL 含版本段 |
 | 改了 `ext_boot.js` 没生效 | 不做热重载，装配期已冻结 spec——必须重启进程 |
 | `ext_boot.js` 里 `await` 报 SyntaxError | 文件无 import/export，被 CJS 启发式包进非 async 函数——加一句 `export {};` |
+| fs 相对路径「找不到文件」 | 相对路径解析到 **fs.root** 之下（不是进程 cwd）——想读进程 cwd 的文件请用绝对路径，且绝对路径也必须在 root 内 |
+| `fs.readDir` 拿到不是数组 | 返回异步迭代器（Deno 语义）：`for await (const e of await fs.readDir("sub"))` 取 `e.name` |
+| handler 里 `await fs…` 顶层报 SyntaxError | run_with/短脚本顶层非 module——包 `(async () => { … })()`；api.ts handler 直接 `async function` + `export default` 即可 |
 | `ext_boot.js` 副作用被放大成百上千次 | boot 每个新建 runtime 都跑（模块数 + `pool_size` + WS Worker 数，每路由 `ws.workers_per_route` 个）——只做全局装配，别写库/发广播/打外部接口 |
 | `Kafka("x")` / `RabbitMQ("x")` 是 undefined | config `kafkas:`/`rabbits:` 段没配该实例名（或对应插件未装配） |
 | poll 报 "requires a task context" | 消费方法只能在 `src/tasks/` 任务文件里用；HTTP/WS 侧发消息用 `send`/`publish` |
@@ -166,6 +173,7 @@ oj（only-js）是一个低代码后端框架：你用 JS/TS 写 handler，框�
 | `oj exec` 脚本输出没看到 | `json.ok(x)` 空转（无 HTTP 消费方）——输出用 `console.log`/`log.*`；但 `console` 仅 exec 可用，同一脚本拷进 handler 是 `ReferenceError` |
 | `oj exec` 的 `-- -x` 被 clap 拒 / 脚本里 `args` 是空数组 | 透传参数必须放在 `--` **之后**（`oj exec s.ts -c config.yaml -- --dry-run`），经 `globalThis.args: string[]` 注入；`--` 前的都归 CLI 自己 |
 | `oj exec` import 报 escapes project root / 找不到 `./util` | 相对导入钳制在项目根（config 所在目录）内且**必须显式扩展名**（`import "./util.ts"`）；脚本放项目外连 `./util.ts` 都导不了 |
+| `oj exec -e/--code` / `--repl` 里 `import "./util"` 报找不到 | 内联代码与 REPL 行**无基准目录**，不支持相对 import——要复用抽出的模块请改走 `oj exec <file>` |
 | `oj exec` 报迁移相关意外 | exec 迁移默认 **off**（serve dev 缺省 auto，两命令相反）；config 显式 `migrate_on_start` 才执行 |
 | `oj exec --log-file` 没生成文件 | 打开失败只 stderr warn 一次、不中断脚本——看 stderr 首行 warn（路径不可写等） |
 | 并发取号撞主键 / 序号重复 | 手写 `select max(id)+1` 的竞态——改用 `db.nextSeq(name)`（v0.1.24，单语句原子；见 `scenarios.md` 场景 7） |
@@ -179,6 +187,9 @@ oj（only-js）是一个低代码后端框架：你用 JS/TS 写 handler，框�
 | 同一 SQL 混合参数类型后报 `invalid byte sequence for encoding "UTF8": 0x00` / `insufficient data left in message` | **v0.1.24 起平台自动按参数形态分缓存键，无需再规避**（PG 插件给 SQL 前置 `/*oj:<形态>*/` 签名；MySQL 无此问题）。若仍出现，检查 PG 插件是否随宿主重建 |
 | 多库项目只有 `default` 迁了 / 某库启动报 M004 | `oj migrate` 缺省只作用 `default`——命名库要 `oj migrate -c config.yaml -d dist --db <name>` 逐库各跑一遍（`test fixture` / `schema diff` 同旗标） |
 | `oj migrate --db X` 把别的模块的表也建进了 X | `--db` 是**整轮**目标库，不读模块级 `manifest.yaml` 的 `db:` 绑定（那只是运行期路由）——模块绑不同库时用 `--db X --module M` 逐组合跑（`scenarios.md` 场景 6） |
+| 生产看 logs 看不到 SQL / 信封里没有 `_sql` | SQL 追踪 dev 默认开、release 默认关（`v0.1.51`）。生产要开就在 config 加 `db_trace.enabled: true`；dev 模式（无 `dist/manifests.yaml`）直接就有，看 `target="oj::sql"` 的日志或响应信封 `_sql` 字段 |
+| 追踪日志/画像里 `params` 是 `"3 params"` 看不到真实值 | `db_trace.redact_params` 默认 `true`（防密码/手机号泄漏）。本地排障关掉脱敏：`db_trace.redact_params: false`（值经 JSON 序列化）；**切勿在生产开明文** |
+| `db.sqlProfile()` 返回空对象 `{}` | 追踪未开启（release 默认 / `enabled:false`）——dev 模式或 `db_trace.enabled: true` 下才有数据；同一请求内调用，跨请求重置 |
 | `--db "x" not declared in config (db keys: […])` | 库名不在 config `db:` 段（键即库名）——工具**故意不回落** `default`，防迁移打在开发库上 |
 | `--redis/--blob/--es/--broker/--kafka/--rabbit` 报 `profile 'X' not declared (available: […])` | 选中的资源 profile 不在对应 config 段（如 `--blob` 不在 `config.blob.backends`）；工具**故意不回落** `default`，防误用开发库/错后端。核对报错里的可用 profile 列表，或补上对应 profile |
 | 一份 config 想同时接多源、又只跑同一条 `oj test`/`oj exec` | v0.1.34 起各资源根 key 都支持 `--<key> <profile>` 选源（`db`/`redis`/`blob`/`es`/`broker`/`kafka`/`rabbit`），选中的 profile 在装配期别名为字面 `default`，JS 全局无需改代码 |

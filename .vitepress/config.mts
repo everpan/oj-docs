@@ -66,72 +66,17 @@ export default withMermaid(defineConfig({
           { text: '排障 FAQ', link: '/guide/12-faq' },
         ],
       },
+      // 后端专题：专栏落地页即索引，子文档清单只维护在 /topics/<x>/ 专栏页，
+      // 这里不再重复列举，避免同一份导航出现两处。
       {
         text: '后端专题',
         items: [
           { text: '专题总览', link: '/topics/' },
-          {
-            text: 'db 专栏',
-            link: '/topics/db/',
-            collapsed: true,
-            items: [
-              {
-                text: 'db 新人手册',
-                link: '/reference/db-guide/',
-                collapsed: true,
-                items: splitNav['/reference/db-guide'],
-              },
-              { text: '数据迁移', link: '/reference/migration' },
-              { text: '06 · 数据层与迁移（学习路径）', link: '/guide/06-data-layer' },
-              { text: '07 · 模块数据层（模块地图）', link: '/modules/07-data-layer' },
-            ],
-          },
-          {
-            text: 'tenant 专栏',
-            link: '/topics/tenant/',
-            collapsed: true,
-            items: [
-              { text: '多租户新手指南', link: '/reference/tenant-guide' },
-              { text: '内置 API 与鉴权', link: '/reference/builtin-api-auth' },
-              { text: '07 · 鉴权与多租户（学习路径）', link: '/guide/07-auth-tenant' },
-            ],
-          },
-          {
-            text: 'websocket 专栏',
-            link: '/topics/websocket/',
-            collapsed: true,
-            items: [
-              { text: 'WebSocket', link: '/reference/websocket' },
-              { text: 'MQ 与长任务', link: '/reference/mq-tasks' },
-              { text: '08 · 实时与消息（学习路径）', link: '/guide/08-realtime' },
-            ],
-          },
-          {
-            text: 'oidc 专栏',
-            link: '/topics/oidc/',
-            collapsed: true,
-            items: [
-              { text: 'OIDC 接入', link: '/reference/oidc-integration' },
-              { text: 'OIDC 实现', link: '/reference/oidc-implementation' },
-              { text: 'idp 模块（内置 OP）', link: '/sample/idp' },
-              { text: 'oidc 模块（RP）', link: '/sample/oidc' },
-            ],
-          },
-          {
-            text: 'mail 专栏',
-            link: '/topics/mail-smtp/',
-            collapsed: true,
-            items: [
-              { text: '邮件投递（SMTP）', link: '/reference/mail-smtp' },
-              { text: '设计记录', link: '/reference/mail-smtp-design' },
-              {
-                text: '实施记录',
-                link: '/reference/mail-smtp-impl/',
-                collapsed: true,
-                items: splitNav['/reference/mail-smtp-impl'],
-              },
-            ],
-          },
+          { text: 'db 专栏', link: '/topics/db/' },
+          { text: 'tenant 专栏', link: '/topics/tenant/' },
+          { text: 'websocket 专栏', link: '/topics/websocket/' },
+          { text: 'oidc 专栏', link: '/topics/oidc/' },
+          { text: 'mail 专栏', link: '/topics/mail-smtp/' },
         ],
       },
       {

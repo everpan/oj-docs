@@ -7,23 +7,14 @@ updated: 2026-09-18
 
 邮件投递：[oj-mail 插件](/reference/plugins/oj-mail) + `smtp:` 配置段，业务侧只面对全局 `Mail` / `mail`。
 
-| 文档 | 看它解决什么 |
-|---|---|
-| [oj-mail 插件状态](/reference/plugins/oj-mail) | 第一方 cdylib 插件的后端轴、配置段、依赖与构建注意、当前状态 |
-| [邮件投递（SMTP）手册](/reference/mail-smtp) | 完整参考：宿主/插件职责边界、`smtp:` 配置与白名单门禁、JS API 与错误码、附件引用、`sendRaw` 语义、`enqueue` 反馈通道、安全清单、构建运维与已知限制 |
-| [JS API 手册 · §6 全局对象](/reference/api-manual/06) | `mail` 速查：方法签名、请求结构、信封与错误码（先看这里上手） |
-| [用户手册](/reference/user-manual/) | `config.yaml` 里 `smtp:` 段的字段说明与装配期校验 |
-| [插件开发](/reference/plugins/plugin-development) | `oj-mail` 是 cdylib 插件：插件发现路径、ABI 与身份预检、`cargo xtask plugin mail` 构建 |
-| [WebSocket](/reference/websocket) | §6 里 `bus.subscribe("mail.result")` 的订阅侧说明（`bus.subscribe` 仅 WS 上下文可用） |
-
 ## 阅读顺序
 
-1. 先配 `smtp:`（[用户手册](/reference/user-manual/) 看字段）并跑 `cargo xtask plugin mail`，
-   未装插件不阻断启动，调用时才会报 `mail not configured`；
-2. 写业务先看 [JS API 手册 · §6](/reference/api-manual/06)，需要细节再翻
-   [完整手册](/reference/mail-smtp)；
-3. 上线前过一遍完整手册的「安全清单」：白名单是 fail-closed 的全等匹配、`tls: none`
-   必须显式开关、`code !== 0` **不得自动重试**。
+1. **[用户手册](/reference/user-manual/)** — `config.yaml` 里 `smtp:` 段的字段说明与装配期校验，先在这里配 `smtp:`；配好后跑 `cargo xtask plugin mail` 构建 oj-mail 插件（未装插件不阻断启动，调用时才报 `mail not configured`）。
+2. **[JS API 手册 · §6 全局对象](/reference/api-manual/06)** — `mail` 速查：方法签名、请求结构、信封与错误码，写业务先在这里上手。
+3. **[邮件投递（SMTP）手册](/reference/mail-smtp)** — 完整参考：宿主/插件职责边界、`smtp:` 配置与白名单门禁、JS API 与错误码、附件引用、`sendRaw` 语义、`enqueue` 反馈通道、安全清单、构建运维与已知限制；上线前务必过一遍「安全清单」：白名单是 fail-closed 的全等匹配、`tls: none` 必须显式开关、`code !== 0` **不得自动重试**。
+4. **[oj-mail 插件状态](/reference/plugins/oj-mail)** — 第一方 cdylib 插件的后端轴、配置段、依赖与构建注意、当前状态。
+5. **[插件开发](/reference/plugins/plugin-development)** — `oj-mail` 是 cdylib 插件：插件发现路径、ABI 与身份预检、`cargo xtask plugin mail` 构建。
+6. **[WebSocket](/reference/websocket)** — §6 里 `bus.subscribe("mail.result")` 的订阅侧说明（`bus.subscribe` 仅 WS 上下文可用）。
 
 > 邮件是**可选能力**：不配 `smtp:` 段就完全不启用，既有部署与插件无需改动（新增 `mail` 轴
 > 不动 ABI 版本）。异步反馈只有**本地** `bus` 扇出，跨进程分布式总线不支持。

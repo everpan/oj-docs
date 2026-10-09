@@ -1,5 +1,6 @@
-// 站点级元数据（备案号、版权等）。直接改这里即可，构建时注入页脚，
-// 无需动 Layout.vue。
+// 站点级元数据兜底默认值。运行时页脚会优先读取 public/beian.json 覆盖此处；
+// 本文件仅作为构建期兜底，保证 SSR / 首屏在 beian.json 缺失时不为空。
+// 真正要改备案号，编辑 public/beian.json 并重新部署该文件即可，不必整站重建。
 
 export interface SiteMeta {
   icp: {
